@@ -1,0 +1,828 @@
+// Company F&B DMS + SFA Prototype
+// PostgreSQL via Prisma (hosted on Neon / Vercel Postgres). Status/type
+// fields are plain strings rather than DB enums; allowed values are documented
+// above each field and enforced in application code (see lib/constants.ts).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ---------------------------------------------------------------------------
+// Org / master data
+// ---------------------------------------------------------------------------
+
+model Branch {
+  id            String   @id @default(cuid())
+  name          String
+  code          String?  @unique
+  address       String
+  contactPerson String?
+  contactPhone  String?
+  status        String   @default("active") // active | inactive
+  createdAt     DateTime @default(now())
+
+  users               User[]
+  outlets             Outlet[]
+  warehouses          Warehouse[]
+  vans                Van[]
+  purchaseOrders      PurchaseOrder[]
+  salesOrders         SalesOrder[]
+  invoices            Invoice[]
+  replenishmentRequests ReplenishmentRequest[]
+}
+
+model User {
+  id           String  @id @default(cuid())
+  name         String
+  role         String // admin | branch_ops | supervisor | sales_rep | management
+  branchId     String?
+  branch       Branch? @relation(fields: [branchId], references: [id])
+  routeId      String?
+  route        Route?  @relation(fields: [routeId], references: [id])
+  supervisorId String?
+  supervisor   User?   @relation("UserSupervisor", fields: [supervisorId], references: [id])
+  reports      User[]  @relation("UserSupervisor")
+  active       Boolean @default(true)
+  vanAssigned  Van?    @relation("VanAssignedUser")
+
+  salesOrders       SalesOrder[]
+  fieldVisits       FieldVisit[]
+  auditLogs         AuditLog[]
+  claims            Claim[]
+  attendances       Attendance[]
+  fieldNotes        FieldNote[]
+  tasksAssigned     Task[]           @relation("TaskAssignedBy")
+  tasksReceived     Task[]           @relation("TaskAssignedTo")
+  leaveRequests     LeaveRequest[]
+  expenseRequests   ExpenseRequest[]
+}
+
+model Channel {
+  id           String        @id @default(cuid())
+  name         String        @unique // General Trade | Modern Trade | Key Accounts
+  outlets      Outlet[]
+  pricingRules PricingRule[]
+  promotions   Promotion[]
+  subChannels  SubChannel[]
+}
+
+// Master list of sub-channels per channel (e.g. GT -> Sari-Sari Store, Carinderia).
+// Outlet.subChannel stays a free-text field for backward compatibility; this
+// table is the admin-managed reference list new outlets should be picked from.
+model SubChannel {
+  id        String  @id @default(cuid())
+  name      String
+  channelId String
+  channel   Channel @relation(fields: [channelId], references: [id])
+  status    String  @default("active") // active | inactive
+}
+
+// A geographic/organizational grouping of outlets that routes are set up within.
+model Territory {
+  id     String  @id @default(cuid())
+  name   String
+  code   String? @unique
+  status String  @default("active") // active | inactive
+  routes Route[]
+}
+
+model Route {
+  id          String       @id @default(cuid())
+  name        String
+  territoryId String?
+  territory   Territory?   @relation(fields: [territoryId], references: [id])
+  outlets     Outlet[]
+  reps        User[]
+  stops       RouteStop[]
+}
+
+// The ordered "beat plan" — fixed outlet visiting sequence for a route.
+model RouteStop {
+  id       String @id @default(cuid())
+  routeId  String
+  route    Route  @relation(fields: [routeId], references: [id])
+  outletId String
+  outlet   Outlet @relation(fields: [outletId], references: [id])
+  sequence Int
+}
+
+model Outlet {
+  id                String   @id @default(cuid())
+  name              String
+  branchId          String
+  branch            Branch   @relation(fields: [branchId], references: [id])
+  channelId         String
+  channel           Channel  @relation(fields: [channelId], references: [id])
+  subChannel        String
+  routeId           String?
+  route             Route?   @relation(fields: [routeId], references: [id])
+  address           String
+  lat               Float
+  lng               Float
+  contactPerson     String?
+  creditLimit       Float    @default(0)
+  status            String   @default("active") // active | inactive
+  onboardingStatus  String   @default("approved") // pending | approved | rejected
+  onboardingReason  String?
+  createdAt         DateTime @default(now())
+
+  salesOrders   SalesOrder[]
+  invoices      Invoice[]
+  arLedger      ARLedgerEntry[]
+  fieldVisits   FieldVisit[]
+  pricingRules  PricingRule[]
+  routeStops    RouteStop[]
+  fieldNotes    FieldNote[]
+  tasks         Task[]
+  marketReturns MarketReturn[]
+  creditNotes   CreditNote[]
+}
+
+model Product {
+  id         String   @id @default(cuid())
+  sku        String   @unique
+  name       String
+  uom        String // CS | PC | BTL etc.
+  packSize   String?
+  category   String
+  hasExpiry  Boolean  @default(true)
+  unitPrice  Float
+  status     String   @default("active")
+
+  stockBalances         StockBalance[]
+  purchaseOrderLines    PurchaseOrderLine[]
+  goodsReceiptLines     GoodsReceiptLine[]
+  salesOrderLines       SalesOrderLine[]
+  invoiceLines          InvoiceLine[]
+  vanLoadLines          VanLoadLine[]
+  stockCountLines       StockCountLine[]
+  promotions            Promotion[]
+  pricingRules          PricingRule[]
+  stockTransfers        StockTransfer[]
+  stockAdjustments      StockAdjustment[]
+  vanReturns            VanReturn[]
+  replenishmentRequests ReplenishmentRequest[]
+  deliveryReceiptLines  DeliveryReceiptLine[]
+  marketReturns         MarketReturn[]
+  supplierReturns       SupplierReturn[]
+}
+
+// ---------------------------------------------------------------------------
+// Stock locations (warehouse + van share the same stock-balance model)
+// ---------------------------------------------------------------------------
+
+model Warehouse {
+  id       String @id @default(cuid())
+  name     String
+  branchId String
+  branch   Branch @relation(fields: [branchId], references: [id])
+
+  stockBalances    StockBalance[]
+  goodsReceipts    GoodsReceipt[]
+  stockCounts      StockCount[]
+  vanLoadsFrom     VanLoad[]
+  transfersOut     StockTransfer[] @relation("TransferFrom")
+  transfersIn      StockTransfer[] @relation("TransferTo")
+  stockAdjustments StockAdjustment[]
+  vanReturns       VanReturn[]
+  supplierReturns  SupplierReturn[]
+}
+
+model Van {
+  id             String  @id @default(cuid())
+  code           String  @unique
+  plateNo        String
+  driverName     String // display label; assignedUserId is the source of truth for lookups
+  assignedUserId String? @unique
+  assignedUser   User?   @relation("VanAssignedUser", fields: [assignedUserId], references: [id])
+  branchId       String
+  branch         Branch  @relation(fields: [branchId], references: [id])
+
+  stockBalances         StockBalance[]
+  vanLoads              VanLoad[]
+  vanReturns            VanReturn[]
+  replenishmentRequests ReplenishmentRequest[]
+}
+
+// A stock balance row belongs to either a warehouse OR a van (locationType discriminates)
+model StockBalance {
+  id          String   @id @default(cuid())
+  locationType String  // warehouse | van
+  warehouseId String?
+  warehouse   Warehouse? @relation(fields: [warehouseId], references: [id])
+  vanId       String?
+  van         Van?       @relation(fields: [vanId], references: [id])
+  productId   String
+  product     Product    @relation(fields: [productId], references: [id])
+  lotNumber   String
+  expiryDate  DateTime?
+  qtyGood     Int        @default(0)
+  qtyDamaged  Int        @default(0)
+  qtyReserved Int        @default(0) // held against confirmed-not-yet-delivered orders; available = qtyGood - qtyReserved
+  goodsReceiptLineId String?
+  goodsReceiptLine   GoodsReceiptLine? @relation(fields: [goodsReceiptLineId], references: [id])
+  updatedAt   DateTime   @updatedAt
+
+  damageEvents StockDamageEvent[]
+
+  @@index([productId])
+  @@index([warehouseId])
+  @@index([vanId])
+}
+
+// Logs every good<->bad reclassification (with an optional photo stub),
+// replacing a silent qty-bucket mutation with an auditable event.
+model StockDamageEvent {
+  id             String       @id @default(cuid())
+  stockBalanceId String
+  stockBalance   StockBalance @relation(fields: [stockBalanceId], references: [id])
+  qty            Int
+  direction      String // good_to_bad | bad_to_good
+  reason         String?
+  photoPlaceholder Boolean    @default(false)
+  createdBy      String
+  createdAt      DateTime     @default(now())
+}
+
+// Warehouse-to-warehouse stock movement, requires approval before it posts.
+model StockTransfer {
+  id              String    @id @default(cuid())
+  fromWarehouseId String
+  fromWarehouse   Warehouse @relation("TransferFrom", fields: [fromWarehouseId], references: [id])
+  toWarehouseId   String
+  toWarehouse     Warehouse @relation("TransferTo", fields: [toWarehouseId], references: [id])
+  productId       String
+  product         Product   @relation(fields: [productId], references: [id])
+  lotNumber       String
+  qty             Int
+  status          String    @default("pending") // pending | approved | rejected | completed
+  requestedBy     String
+  approvedBy      String?
+  notes           String?
+  createdAt       DateTime  @default(now())
+  decidedAt       DateTime?
+}
+
+// Reason-coded stock corrections (shrinkage, damage found, count correction), requires approval.
+model StockAdjustment {
+  id          String    @id @default(cuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  lotNumber   String
+  expiryDate  DateTime?
+  qtyDelta    Int // positive = add, negative = remove
+  reasonCode  String // damage | shrinkage | count_correction | opening_balance | other
+  status      String    @default("pending") // pending | approved | rejected
+  requestedBy String
+  approvedBy  String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+}
+
+// Warehouse stock returned OUT to the supplier/manufacturer (e.g. expired,
+// damaged or recalled goods sent back for credit) — distinct from VanReturn
+// (van -> warehouse, stays inside the distributor) and MarketReturn
+// (outlet -> rep). Requires approval before stock is deducted, then a
+// separate "shipped" step once the goods actually leave the warehouse.
+model SupplierReturn {
+  id          String    @id @default(cuid())
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  productId   String
+  product     Product   @relation(fields: [productId], references: [id])
+  lotNumber   String
+  qty         Int
+  reason      String // expired | damaged | recalled | other
+  status      String    @default("pending") // pending | approved | rejected | shipped
+  requestedBy String
+  approvedBy  String?
+  notes       String?
+  createdAt   DateTime  @default(now())
+  decidedAt   DateTime?
+}
+
+// Van -> warehouse returns (also covers "returns to central warehouse").
+model VanReturn {
+  id          String   @id @default(cuid())
+  vanId       String
+  van         Van      @relation(fields: [vanId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  productId   String
+  product     Product  @relation(fields: [productId], references: [id])
+  lotNumber   String
+  qty         Int
+  condition   String   @default("good") // good | damaged
+  reason      String?
+  status      String   @default("completed") // pending | completed
+  returnedBy  String
+  createdAt   DateTime @default(now())
+}
+
+// Rep-initiated request for more van stock; supervisor/branch-ops approves and fulfils via VanLoad.
+model ReplenishmentRequest {
+  id            String    @id @default(cuid())
+  vanId         String
+  van           Van       @relation(fields: [vanId], references: [id])
+  branchId      String
+  branch        Branch    @relation(fields: [branchId], references: [id])
+  productId     String
+  product       Product   @relation(fields: [productId], references: [id])
+  qtyRequested  Int
+  status        String    @default("pending") // pending | approved | rejected | fulfilled
+  requestedBy   String
+  createdAt     DateTime  @default(now())
+  decidedAt     DateTime?
+}
+
+// ---------------------------------------------------------------------------
+// Procurement
+// ---------------------------------------------------------------------------
+
+model PurchaseOrder {
+  id          String   @id @default(cuid())
+  poNumber    String   @unique
+  branchId    String
+  branch      Branch   @relation(fields: [branchId], references: [id])
+  status      String   @default("pending") // pending | partially_received | received | cancelled
+  orderDate   DateTime @default(now())
+  expectedDate DateTime?
+
+  lines         PurchaseOrderLine[]
+  goodsReceipts GoodsReceipt[]
+}
+
+model PurchaseOrderLine {
+  id              String        @id @default(cuid())
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  productId       String
+  product         Product       @relation(fields: [productId], references: [id])
+  qtyOrdered      Int
+  unitCost        Float
+}
+
+model GoodsReceipt {
+  id              String        @id @default(cuid())
+  grNumber        String        @unique
+  purchaseOrderId String
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  warehouseId     String
+  warehouse       Warehouse     @relation(fields: [warehouseId], references: [id])
+  receivedDate    DateTime      @default(now())
+  receivedBy      String
+  hasAttachment   Boolean       @default(false)
+  attachmentFilename String?
+
+  lines GoodsReceiptLine[]
+}
+
+model GoodsReceiptLine {
+  id             String       @id @default(cuid())
+  goodsReceiptId String
+  goodsReceipt   GoodsReceipt @relation(fields: [goodsReceiptId], references: [id])
+  productId      String
+  product        Product      @relation(fields: [productId], references: [id])
+  qtyExpected    Int
+  qtyReceived    Int
+  lotNumber      String
+  expiryDate     DateTime?
+
+  stockBalances StockBalance[]
+}
+
+// ---------------------------------------------------------------------------
+// Sales
+// ---------------------------------------------------------------------------
+
+model SalesOrder {
+  id            String   @id @default(cuid())
+  orderNumber   String   @unique
+  outletId      String
+  outlet        Outlet   @relation(fields: [outletId], references: [id])
+  branchId      String
+  branch        Branch   @relation(fields: [branchId], references: [id])
+  salespersonId String
+  salesperson   User     @relation(fields: [salespersonId], references: [id])
+  status        String   @default("draft") // draft | confirmed | invoiced | delivered | voided
+  orderDate     DateTime @default(now())
+  requestedDeliveryDate DateTime?
+  signatureDataUrl String?
+  subtotal      Float    @default(0)
+  discountTotal Float    @default(0)
+  total         Float    @default(0)
+  creditHoldReason String?
+  voidReason    String?
+
+  lines         SalesOrderLine[]
+  invoices      Invoice[]
+  approvals     ApprovalRequest[]
+}
+
+model SalesOrderLine {
+  id           String     @id @default(cuid())
+  salesOrderId String
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  qty          Int
+  unitPrice    Float
+  discount     Float      @default(0)
+  lineTotal    Float
+  promotionId  String?
+  promotion    Promotion? @relation(fields: [promotionId], references: [id])
+  reservedLotNumber String? // the FEFO-picked warehouse lot reserved for this line, for backend orders
+  qtyDelivered Int?        // actual delivered qty once fulfilled — may be less than qty (partial delivery)
+}
+
+model Invoice {
+  id            String   @id @default(cuid())
+  invoiceNumber String   @unique
+  salesOrderId  String
+  salesOrder    SalesOrder @relation(fields: [salesOrderId], references: [id])
+  outletId      String
+  outlet        Outlet   @relation(fields: [outletId], references: [id])
+  branchId      String
+  branch        Branch   @relation(fields: [branchId], references: [id])
+  invoiceDate   DateTime @default(now())
+  dueDate       DateTime
+  amount        Float
+  status        String   @default("unpaid") // unpaid | partially_paid | paid | overdue | voided
+
+  lines            InvoiceLine[]
+  deliveryReceipts DeliveryReceipt[]
+  arLedgerEntries  ARLedgerEntry[]
+}
+
+model InvoiceLine {
+  id        String  @id @default(cuid())
+  invoiceId String
+  invoice   Invoice @relation(fields: [invoiceId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  unitPrice Float
+  lineTotal Float
+}
+
+model DeliveryReceipt {
+  id           String   @id @default(cuid())
+  drNumber     String   @unique
+  invoiceId    String
+  invoice      Invoice  @relation(fields: [invoiceId], references: [id])
+  deliveredAt  DateTime @default(now())
+  receivedBy   String
+  status       String   @default("delivered") // delivered | partial | failed
+
+  lines DeliveryReceiptLine[]
+}
+
+// Per-line actual-delivered-vs-ordered, so a partial delivery is traceable.
+model DeliveryReceiptLine {
+  id                String          @id @default(cuid())
+  deliveryReceiptId String
+  deliveryReceipt   DeliveryReceipt @relation(fields: [deliveryReceiptId], references: [id])
+  productId         String
+  product           Product         @relation(fields: [productId], references: [id])
+  qtyOrdered        Int
+  qtyDelivered      Int
+}
+
+// ---------------------------------------------------------------------------
+// Pricing rules (channel/customer level)
+// ---------------------------------------------------------------------------
+
+model PricingRule {
+  id        String    @id @default(cuid())
+  name      String
+  level     String // channel | customer
+  channelId String?
+  channel   Channel?  @relation(fields: [channelId], references: [id])
+  outletId  String?
+  outlet    Outlet?   @relation(fields: [outletId], references: [id])
+  productId String?
+  product   Product?  @relation(fields: [productId], references: [id])
+  priceType String // fixed_price | discount_percent
+  value     Float
+  startDate DateTime
+  endDate   DateTime?
+  status    String    @default("active") // active | expired
+  createdAt DateTime  @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Trade promotions & claims
+// ---------------------------------------------------------------------------
+
+model Promotion {
+  id             String   @id @default(cuid())
+  name           String
+  type           String // volume_discount | free_good | price_off | rebate
+  eligibilityRule String  // free-text description, kept for display alongside the structured minQty check
+  minQty         Int?    // structured eligibility condition: order line qty must be >= this to apply
+  productId      String?
+  product        Product? @relation(fields: [productId], references: [id])
+  channelId      String?
+  channel        Channel? @relation(fields: [channelId], references: [id])
+  discountValue  Float   // percent discount for volume_discount/price_off/rebate
+  freeQty        Int?    // free units granted per qualifying line, for type = free_good
+  startDate      DateTime
+  endDate        DateTime
+  status         String   @default("active") // active | expired | draft
+
+  salesOrderLines SalesOrderLine[]
+  claims          Claim[]
+}
+
+model Claim {
+  id           String   @id @default(cuid())
+  claimNumber  String   @unique
+  promotionId  String
+  promotion    Promotion @relation(fields: [promotionId], references: [id])
+  submittedById String
+  submittedBy  User     @relation(fields: [submittedById], references: [id])
+  amount       Float
+  status       String   @default("submitted") // submitted | reviewed | approved | rejected | settled
+  submittedAt  DateTime @default(now())
+  notes        String?
+
+  statusHistory ClaimStatusHistory[]
+}
+
+model ClaimStatusHistory {
+  id        String   @id @default(cuid())
+  claimId   String
+  claim     Claim    @relation(fields: [claimId], references: [id])
+  status    String
+  changedBy String
+  changedAt DateTime @default(now())
+  reason    String?
+}
+
+// ---------------------------------------------------------------------------
+// Approvals (credit limit exceptions, discount overrides, order voids, ...)
+// ---------------------------------------------------------------------------
+
+model ApprovalRequest {
+  id              String   @id @default(cuid())
+  type            String // credit_limit_exception | discount_override | stock_shortage | price_promo_mismatch | order_void | ar_reversal
+  salesOrderId    String?
+  salesOrder      SalesOrder? @relation(fields: [salesOrderId], references: [id])
+  arLedgerEntryId String?
+  arLedgerEntry   ARLedgerEntry? @relation(fields: [arLedgerEntryId], references: [id])
+  requestedBy     String
+  amount          Float
+  reason          String
+  status          String   @default("pending") // pending | approved | rejected
+  decidedBy       String?
+  decisionNote    String?
+  createdAt       DateTime @default(now())
+  decidedAt       DateTime?
+}
+
+// ---------------------------------------------------------------------------
+// AR / collections
+// ---------------------------------------------------------------------------
+
+model ARLedgerEntry {
+  id               String   @id @default(cuid())
+  outletId         String
+  outlet           Outlet   @relation(fields: [outletId], references: [id])
+  invoiceId        String?
+  invoice          Invoice? @relation(fields: [invoiceId], references: [id])
+  type             String // invoice | payment | credit_note | void_reversal | reversal
+  method           String? // cash | cheque (only for payments)
+  amount           Float
+  balance          Float
+  entryDate        DateTime @default(now())
+  reference        String?
+  reversalRequests ApprovalRequest[]
+}
+
+// Reduces an outlet's AR balance (from a market return or goodwill adjustment).
+model CreditNote {
+  id         String   @id @default(cuid())
+  noteNumber String   @unique
+  outletId   String
+  outlet     Outlet   @relation(fields: [outletId], references: [id])
+  amount     Float
+  reason     String
+  status     String   @default("issued") // issued | void
+  issuedBy   String
+  issuedAt   DateTime @default(now())
+
+  marketReturn MarketReturn?
+}
+
+// ---------------------------------------------------------------------------
+// Van loading
+// ---------------------------------------------------------------------------
+
+model VanLoad {
+  id          String   @id @default(cuid())
+  vanId       String
+  van         Van      @relation(fields: [vanId], references: [id])
+  warehouseId String
+  warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
+  loadedAt    DateTime @default(now())
+  loadedBy    String
+  status      String   @default("pending") // pending | approved | rejected — stock only moves on approval
+  approvedBy  String?
+  decidedAt   DateTime?
+  confirmedAt DateTime? // rep's own acknowledgement of receipt, from the SFA app
+
+  lines VanLoadLine[]
+}
+
+model VanLoadLine {
+  id        String  @id @default(cuid())
+  vanLoadId String
+  vanLoad   VanLoad @relation(fields: [vanLoadId], references: [id])
+  productId String
+  product   Product @relation(fields: [productId], references: [id])
+  qty       Int
+  lotNumber String
+}
+
+// ---------------------------------------------------------------------------
+// Stock count
+// ---------------------------------------------------------------------------
+
+model StockCount {
+  id           String   @id @default(cuid())
+  warehouseId  String
+  warehouse    Warehouse @relation(fields: [warehouseId], references: [id])
+  countedBy    String
+  countedAt    DateTime @default(now())
+  status       String   @default("open") // open | pending_approval | approved | rejected | closed
+  approvedBy   String?
+
+  lines StockCountLine[]
+}
+
+model StockCountLine {
+  id           String     @id @default(cuid())
+  stockCountId String
+  stockCount   StockCount @relation(fields: [stockCountId], references: [id])
+  productId    String
+  product      Product    @relation(fields: [productId], references: [id])
+  lotNumber    String
+  systemQty    Int
+  countedQty   Int
+  variance     Int
+}
+
+// ---------------------------------------------------------------------------
+// Field execution
+// ---------------------------------------------------------------------------
+
+model FieldVisit {
+  id            String    @id @default(cuid())
+  outletId      String
+  outlet        Outlet    @relation(fields: [outletId], references: [id])
+  salespersonId String
+  salesperson   User      @relation(fields: [salespersonId], references: [id])
+  checkinAt     DateTime  @default(now())
+  checkinLat    Float
+  checkinLng    Float
+  checkoutAt    DateTime?
+  checkoutLat   Float?
+  checkoutLng   Float?
+  feedback      String?
+  photoPlaceholder Boolean @default(false)
+  status        String    @default("in_progress") // in_progress | completed
+}
+
+// Shelf audit, merchandising insight and competitor observation share the same
+// shape (outlet + rep + free-text notes + optional photo), split by `type`.
+model FieldNote {
+  id            String   @id @default(cuid())
+  outletId      String
+  outlet        Outlet   @relation(fields: [outletId], references: [id])
+  salespersonId String
+  salesperson   User     @relation(fields: [salespersonId], references: [id])
+  type          String // shelf_audit | merchandising | competitor
+  notes         String
+  photoPlaceholder Boolean @default(false)
+  createdAt     DateTime @default(now())
+}
+
+model Task {
+  id             String    @id @default(cuid())
+  title          String
+  description    String?
+  assignedToId   String
+  assignedTo     User      @relation("TaskAssignedTo", fields: [assignedToId], references: [id])
+  assignedById   String
+  assignedBy     User      @relation("TaskAssignedBy", fields: [assignedById], references: [id])
+  outletId       String?
+  outlet         Outlet?   @relation(fields: [outletId], references: [id])
+  dueDate        DateTime?
+  status         String    @default("pending") // pending | completed
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+}
+
+// Market return capture; can be settled with a CreditNote.
+model MarketReturn {
+  id           String      @id @default(cuid())
+  outletId     String
+  outlet       Outlet      @relation(fields: [outletId], references: [id])
+  productId    String
+  product      Product     @relation(fields: [productId], references: [id])
+  qty          Int
+  reason       String
+  photoPlaceholder Boolean @default(false)
+  status       String      @default("pending") // pending | processed
+  capturedBy   String
+  createdAt    DateTime    @default(now())
+  creditNoteId String?     @unique
+  creditNote   CreditNote? @relation(fields: [creditNoteId], references: [id])
+}
+
+// ---------------------------------------------------------------------------
+// Workforce administration (mobile) — marked conditional in the UI
+// ---------------------------------------------------------------------------
+
+model Attendance {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  dayDate   DateTime
+  startAt   DateTime?
+  startLat  Float?
+  startLng  Float?
+  endAt     DateTime?
+  endLat    Float?
+  endLng    Float?
+  status    String    @default("in_progress") // in_progress | completed
+  eodConfirmedAt DateTime? // rep's sign-off on the day's load/sold/returned reconciliation
+}
+
+model LeaveRequest {
+  id         String    @id @default(cuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id])
+  startDate  DateTime
+  endDate    DateTime
+  reason     String
+  status     String    @default("pending") // pending | approved | rejected
+  approvedBy String?
+  createdAt  DateTime  @default(now())
+  decidedAt  DateTime?
+}
+
+model ExpenseRequest {
+  id               String    @id @default(cuid())
+  userId           String
+  user             User      @relation(fields: [userId], references: [id])
+  amount           Float
+  category         String // travel | meals | fuel | other
+  description      String
+  receiptPlaceholder Boolean @default(false)
+  status           String    @default("pending") // pending | approved | rejected
+  approvedBy       String?
+  createdAt        DateTime  @default(now())
+  decidedAt        DateTime?
+}
+
+// ---------------------------------------------------------------------------
+// Scheduled reports (config-only demo — no real cron)
+// ---------------------------------------------------------------------------
+
+model ScheduledReport {
+  id                 String    @id @default(cuid())
+  name               String
+  reportType         String // sales_summary | ar_aging | inventory_valuation | claims_status
+  scheduleDescription String  // free text e.g. "Every Monday 8:00 AM"
+  recipientEmails    String
+  status             String    @default("active") // active | inactive
+  lastRunAt          DateTime?
+  createdBy          String
+  createdAt          DateTime  @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Audit log
+// ---------------------------------------------------------------------------
+
+model AuditLog {
+  id         String   @id @default(cuid())
+  entity     String
+  entityId   String
+  action     String // create | update | delete | void
+  userId     String
+  user       User     @relation(fields: [userId], references: [id])
+  summary    String
+  beforeData String? // JSON-stringified snapshot, when applicable
+  afterData  String? // JSON-stringified snapshot, when applicable
+  createdAt  DateTime @default(now())
+}

@@ -1,0 +1,25 @@
+import AppShell from "@/components/AppShell";
+import { getSession } from "@/lib/session";
+import type { NavItem } from "@/components/Sidebar";
+
+const navItems: NavItem[] = [
+  { href: "/supervisor", label: "Overview", icon: "LayoutDashboard" },
+  { href: "/supervisor/approvals", label: "Approvals", icon: "ShieldCheck" },
+  { href: "/supervisor/orders", label: "Orders (Void Requests)", icon: "AlertOctagon" },
+  { href: "/supervisor/claims", label: "Claims Review", icon: "ReceiptText" },
+  { href: "/supervisor/ar-aging", label: "AR Aging", icon: "Wallet" },
+  { href: "/supervisor/payment-reconciliation", label: "Payment Reconciliation", icon: "ArrowLeftRight" },
+  { href: "/supervisor/market-returns", label: "Market Returns", icon: "Undo2" },
+  { href: "/supervisor/team-dashboard", label: "Team Dashboard", icon: "Users" },
+  { href: "/supervisor/coverage", label: "Coverage Monitoring", icon: "MapPinned" },
+  { href: "/supervisor/scorecards", label: "Rep Scorecards", icon: "BarChart3" },
+];
+
+export default async function SupervisorLayout({ children }: { children: React.ReactNode }) {
+  const { role, branchId, userId } = await getSession();
+  return (
+    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} title="Sales & Finance Supervisor">
+      {children}
+    </AppShell>
+  );
+}
