@@ -176,6 +176,7 @@ export async function priceOrder(outletId: string, items: OrderItem[]): Promise<
   let subtotal = 0;
   const lines: PricedLine[] = [];
   const hints: Record<string, string> = {};
+  const lineUsage = new Map<string, { promoDiscount: number; freeQty: number; promos: Promotion[] }>();
 
   for (const item of items) {
     const product = products.find((p) => p.id === item.productId);
@@ -222,6 +223,8 @@ export async function priceOrder(outletId: string, items: OrderItem[]): Promise<
       freeQty: promoDiscount > 0 ? freeQty : 0,
     });
 
+    lineUsage.set(product.id, { promoDiscount, freeQty: promoDiscount > 0 ? freeQty : 0, promos: promoDiscount > 0 ? applied.map((b) => b.promo) : [] });
+
     // Hint: the nearest threshold not yet reached.
     const near = promos
       .filter((p) => (!p.productId || p.productId === product.id) && p.minQty && item.qty < p.minQty && p.type !== "bundle" && p.type !== "value_based")
@@ -232,7 +235,7 @@ export async function priceOrder(outletId: string, items: OrderItem[]): Promise<
   }
 
   // Order-level promotions: bundles and value-based offers.
-  const orderPromos: PricingResult["orderPromos"] = [];
+  let orderPromos: PricingResult["orderPromos"] = [];
   const gross = lines.reduce((s, l) => s + l.unitPrice * l.qty, 0);
   for (const p of promos) {
     if (p.type !== "bundle" && p.type !== "value_based") continue;
@@ -257,6 +260,29 @@ export async function priceOrder(outletId: string, items: OrderItem[]): Promise<
     if (amount <= 0) continue;
     if (orderPromos.length > 0 && !(combines(p) && orderPromos.every((o) => combines(promos.find((x) => x.id === o.id)!)))) continue;
     orderPromos.push({ id: p.id, name: p.name, amount });
+  }
+  // Line promotions and order promotions combine only when every one of them allows it; otherwise the larger
+  // benefit applies and the other is dropped.
+  if (orderPromos.length > 0) {
+    const linePromos = [...lineUsage.values()].flatMap((u) => u.promos);
+    const orderDefs = orderPromos.map((o) => promos.find((p) => p.id === o.id)!);
+    if (linePromos.length > 0 && !(linePromos.every(combines) && orderDefs.every(combines))) {
+      const lineTotal = [...lineUsage.values()].reduce((sum, u) => sum + u.promoDiscount, 0);
+      const orderTotal = orderPromos.reduce((sum, o) => sum + o.amount, 0);
+      if (orderTotal > lineTotal) {
+        for (const l of lines) {
+          const u = lineUsage.get(l.productId);
+          if (!u || u.promoDiscount <= 0) continue;
+          l.discount = Math.max(0, l.discount - u.promoDiscount);
+          l.lineTotal = l.unitPrice * l.qty - l.discount;
+          l.promotionId = undefined;
+          l.promoNames = (l.promoNames ?? []).filter((n) => !u.promos.some((p) => p.name === n));
+          l.freeQty = 0;
+        }
+      } else {
+        orderPromos = [];
+      }
+    }
   }
   const orderPromoTotal = orderPromos.reduce((s, o) => s + o.amount, 0);
   if (orderPromoTotal > 0 && gross > 0) {

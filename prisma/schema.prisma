@@ -748,6 +748,9 @@ model Promotion {
   branchIds      String?  // comma-separated; empty = all branches
   daysOfWeek     String?
   approvedBy     String?
+  createdBy      String?
+  suspendReason  String?
+  notes          String?
 
   salesOrderLines SalesOrderLine[]
   claims          Claim[]

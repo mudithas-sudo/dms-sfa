@@ -1,113 +1,107 @@
+import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency, daysBetween } from "@/lib/format";
+import { getAllSettings, num } from "@/lib/settings";
+import { ageingBounds, bucketIndex, bucketLabels, invoiceBalance } from "@/lib/finance";
 
-interface Bucket {
+interface Row {
+  outletId: string;
   outletName: string;
   creditLimit: number;
-  current: number;
-  b1_30: number;
-  b31_60: number;
-  b61_90: number;
-  b90plus: number;
+  creditStatus: string;
+  buckets: number[];
+  pending: number;
+  oldest: number;
 }
 
 export default async function ArAgingPage() {
   const { branchId } = await getSession();
+  const s = await getAllSettings();
+  const bounds = ageingBounds(s["ageing.buckets"]);
+  const labels = bucketLabels(bounds);
+  const colour = ["text-slate-900", "text-emerald-600", "text-amber-600", "text-orange-600", "text-rose-600", "text-rose-700"];
 
   const invoices = await prisma.invoice.findMany({
     where: { status: { in: ["unpaid", "partially_paid", "overdue"] }, ...(branchId ? { branchId } : {}) },
     include: { outlet: true, arLedgerEntries: true },
   });
 
-  const buckets: Record<string, Bucket> = {};
-
+  const byOutlet = new Map<string, Row>();
   for (const inv of invoices) {
-    const paid = inv.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
-    const outstanding = inv.amount - paid;
+    const outstanding = invoiceBalance(inv);
     if (outstanding <= 0) continue;
-
-    const daysPastDue = daysBetween(new Date(), inv.dueDate);
-
-    if (!buckets[inv.outletId]) {
-      buckets[inv.outletId] = {
-        outletName: inv.outlet.name,
-        creditLimit: inv.outlet.creditLimit,
-        current: 0,
-        b1_30: 0,
-        b31_60: 0,
-        b61_90: 0,
-        b90plus: 0,
-      };
-    }
-    const b = buckets[inv.outletId];
-    if (daysPastDue <= 0) b.current += outstanding;
-    else if (daysPastDue <= 30) b.b1_30 += outstanding;
-    else if (daysPastDue <= 60) b.b31_60 += outstanding;
-    else if (daysPastDue <= 90) b.b61_90 += outstanding;
-    else b.b90plus += outstanding;
+    const row = byOutlet.get(inv.outletId) ?? { outletId: inv.outletId, outletName: inv.outlet.name, creditLimit: inv.outlet.creditLimit, creditStatus: inv.outlet.creditStatus, buckets: labels.map(() => 0), pending: 0, oldest: 0 };
+    const late = daysBetween(new Date(), inv.dueDate);
+    row.oldest = Math.max(row.oldest, late);
+    row.buckets[bucketIndex(late, bounds)] += outstanding;
+    row.pending += inv.arLedgerEntries.filter((e) => e.type === "payment" && e.paymentStatus === "pending" && e.recStatus !== "reversed").reduce((sum, e) => sum + e.amount, 0);
+    byOutlet.set(inv.outletId, row);
   }
-
-  const rowTotal = (r: Bucket) => r.current + r.b1_30 + r.b31_60 + r.b61_90 + r.b90plus;
-  const rows = Object.values(buckets).sort((a, b) => rowTotal(b) - rowTotal(a));
-  const totals = rows.reduce(
-    (acc, r) => ({
-      current: acc.current + r.current,
-      b1_30: acc.b1_30 + r.b1_30,
-      b31_60: acc.b31_60 + r.b31_60,
-      b61_90: acc.b61_90 + r.b61_90,
-      b90plus: acc.b90plus + r.b90plus,
-    }),
-    { current: 0, b1_30: 0, b31_60: 0, b61_90: 0, b90plus: 0 },
-  );
+  const total = (r: Row) => r.buckets.reduce((a, b) => a + b, 0);
+  const rows = [...byOutlet.values()].sort((a, b) => total(b) - total(a));
+  const totals = labels.map((_, i) => rows.reduce((sum, r) => sum + r.buckets[i], 0));
+  const overdueTotal = totals.slice(1).reduce((a, b) => a + b, 0);
 
   return (
     <div className="space-y-4">
-      <h2 className="text-base font-semibold text-slate-900">AR Aging</h2>
-
-      <div className="grid grid-cols-2 gap-4 sm:grid-cols-5">
-        <div className="card p-4"><p className="text-xs text-slate-500">Current</p><p className="text-xl font-semibold text-slate-900">{formatCurrency(totals.current)}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">1–30 Days</p><p className="text-xl font-semibold text-emerald-600">{formatCurrency(totals.b1_30)}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">31–60 Days</p><p className="text-xl font-semibold text-amber-600">{formatCurrency(totals.b31_60)}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">61–90 Days</p><p className="text-xl font-semibold text-orange-600">{formatCurrency(totals.b61_90)}</p></div>
-        <div className="card p-4"><p className="text-xs text-slate-500">90+ Days</p><p className="text-xl font-semibold text-rose-600">{formatCurrency(totals.b90plus)}</p></div>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="text-base font-semibold text-slate-900">Receivables Ageing</h2>
+          <p className="text-xs text-slate-500">
+            Buckets ({bounds.join(" / ")} days) are set in Platform Configuration. Pending (uncleared or post-dated) cheques do not reduce a balance until they clear.
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/supervisor/credit" className="btn-secondary">Credit control</Link>
+          <Link href="/supervisor/payment-reconciliation" className="btn-secondary">Record payment</Link>
+        </div>
       </div>
+
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-6">
+        {labels.map((l, i) => (
+          <div key={l} className="card p-4">
+            <p className="text-xs text-slate-500">{l}</p>
+            <p className={`text-lg font-semibold ${colour[Math.min(i, colour.length - 1)]}`}>{formatCurrency(totals[i])}</p>
+          </div>
+        ))}
+      </div>
+      <p className="text-sm text-slate-600">Total overdue <strong className="text-rose-600">{formatCurrency(overdueTotal)}</strong> of {formatCurrency(totals.reduce((a, b) => a + b, 0))} outstanding. Alert thresholds: {num(s, "credit.overdueDays")} days or ₱{num(s, "credit.overdueAmount").toLocaleString()}.</p>
 
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
-              <th className="th">Outlet</th>
-              <th className="th">Current</th>
-              <th className="th">1–30 Days</th>
-              <th className="th">31–60 Days</th>
-              <th className="th">61–90 Days</th>
-              <th className="th">90+ Days</th>
-              <th className="th">Total Outstanding</th>
-              <th className="th">Credit Limit</th>
+              <th className="th">Customer</th>
+              {labels.map((l) => (
+                <th key={l} className="th">{l}</th>
+              ))}
+              <th className="th">Total</th>
+              <th className="th">Pending cheques</th>
+              <th className="th">Limit</th>
+              <th className="th">Credit status</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100">
-            {rows.map((r, i) => {
-              const total = rowTotal(r);
+            {rows.map((r) => {
+              const t = total(r);
+              const overdue = r.buckets.slice(1).reduce((a, b) => a + b, 0);
+              const over = overdue >= num(s, "credit.overdueAmount") || (overdue > 0 && r.oldest >= num(s, "credit.overdueDays"));
               return (
-                <tr key={i} className="hover:bg-slate-50">
-                  <td className="td font-medium text-slate-900">{r.outletName}</td>
-                  <td className="td">{formatCurrency(r.current)}</td>
-                  <td className="td">{formatCurrency(r.b1_30)}</td>
-                  <td className="td">{formatCurrency(r.b31_60)}</td>
-                  <td className="td">{formatCurrency(r.b61_90)}</td>
-                  <td className="td">{formatCurrency(r.b90plus)}</td>
-                  <td className={`td font-medium ${total > r.creditLimit ? "text-rose-600" : "text-slate-900"}`}>
-                    {formatCurrency(total)}
-                  </td>
+                <tr key={r.outletId} className="hover:bg-slate-50">
+                  <td className="td"><Link href={`/supervisor/payment-reconciliation?outlet=${r.outletId}`} className="font-medium text-blue-700 hover:underline">{r.outletName}</Link>{over && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800">alert</span>}</td>
+                  {r.buckets.map((b, i) => (
+                    <td key={i} className="td">{b ? formatCurrency(b) : <span className="text-slate-300">—</span>}</td>
+                  ))}
+                  <td className={`td font-medium ${t > r.creditLimit ? "text-rose-600" : "text-slate-900"}`}>{formatCurrency(t)}</td>
+                  <td className="td text-xs text-slate-500">{r.pending ? formatCurrency(r.pending) : "—"}</td>
                   <td className="td text-slate-500">{formatCurrency(r.creditLimit)}</td>
+                  <td className="td"><StatusBadge status={r.creditStatus} /></td>
                 </tr>
               );
             })}
-            {rows.length === 0 && (
-              <tr><td className="td text-slate-400" colSpan={8}>No outstanding balances.</td></tr>
-            )}
+            {rows.length === 0 && <tr><td className="td text-slate-400" colSpan={labels.length + 5}>No outstanding balances.</td></tr>}
           </tbody>
         </table>
       </div>

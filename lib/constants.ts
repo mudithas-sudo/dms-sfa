@@ -91,6 +91,7 @@ export const STATUS_COLORS: Record<string, string> = {
   ended: "red",
   error: "red",
   unpaid: "red",
+  bounced: "red",
 };
 
 // Free-text `type` values used across the new ApprovalRequest / FieldNote /

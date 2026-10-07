@@ -873,30 +873,6 @@ export async function updateVan(formData: FormData) {
 // (Replaced in later steps: promotions and scheduled reports have dedicated modules.)
 // ---------------------------------------------------------------------------
 
-export async function createPromotion(formData: FormData) {
-  const name = str(formData, "name");
-  const type = str(formData, "type") || "volume_discount";
-  const endDate = new Date(str(formData, "endDate"));
-  if (!name) return;
-  const promo = await prisma.promotion.create({
-    data: {
-      name, type,
-      eligibilityRule: str(formData, "eligibilityRule"),
-      minQty: str(formData, "minQty") ? Number(str(formData, "minQty")) : null,
-      productId: strOrNull(formData, "productId"),
-      channelId: strOrNull(formData, "channelId"),
-      discountValue: num(formData, "discountValue"),
-      freeQty: str(formData, "freeQty") ? Number(str(formData, "freeQty")) : null,
-      startDate: new Date(str(formData, "startDate")),
-      endDate,
-      status: endDate >= new Date() ? "active" : "expired",
-    },
-  });
-  await logAudit("Promotion", promo.id, "create", `Created promotion "${name}"`, { after: promo });
-  revalidatePath("/admin/promotions");
-  redirect("/admin/promotions");
-}
-
 export async function createScheduledReport(formData: FormData) {
   const name = str(formData, "name");
   const scheduleDescription = str(formData, "scheduleDescription");

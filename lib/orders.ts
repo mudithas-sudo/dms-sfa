@@ -1,3 +1,4 @@
+import { outletBalance, invoiceBalance } from "@/lib/finance";
 import { prisma } from "@/lib/prisma";
 import { priceOrder, type PricedLine, type PricingResult } from "@/lib/pricing";
 import { getAllSettings, num } from "@/lib/settings";
@@ -35,24 +36,21 @@ export const ORDER_EDIT_RULES: { status: string; label: string; editable: string
 
 export async function outletPosition(outletId: string): Promise<OutletPosition> {
   const now = new Date();
-  const [invoices, open] = await Promise.all([
+  const [invoices, open, outstanding] = await Promise.all([
     prisma.invoice.findMany({ where: { outletId, status: { in: ["unpaid", "partially_paid", "overdue"] } }, include: { arLedgerEntries: true } }),
     prisma.salesOrder.aggregate({ where: { outletId, status: { in: ["confirmed", "picked", "on_hold"] } }, _sum: { total: true } }),
+    outletBalance(outletId),
   ]);
-  let outstanding = 0;
   let overdueAmount = 0;
   let oldest = 0;
   for (const inv of invoices) {
-    const paid = inv.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
-    const adj = inv.arLedgerEntries.filter((e) => e.type === "credit_note" || e.type === "adjustment" || e.type === "write_off").reduce((s, e) => s + e.amount, 0);
-    const bal = Math.max(0, inv.amount - paid + Math.min(0, adj));
-    outstanding += bal;
+    const bal = invoiceBalance(inv);
     if (inv.dueDate < now && bal > 0) {
       overdueAmount += bal;
       oldest = Math.max(oldest, Math.floor((now.getTime() - inv.dueDate.getTime()) / 86400000));
     }
   }
-  return { outstanding, overdueAmount, oldestOverdueDays: oldest, openOrderValue: open._sum.total ?? 0 };
+  return { outstanding: Math.max(0, outstanding), overdueAmount, oldestOverdueDays: oldest, openOrderValue: open._sum.total ?? 0 };
 }
 
 function severityOf(settings: Record<string, string>, key: string): "block" | "warn" | "off" {

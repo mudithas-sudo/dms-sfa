@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
+import { invoiceBalance } from "@/lib/finance";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency, formatDate } from "@/lib/format";
 
@@ -25,11 +26,8 @@ export default async function OutletDetailPage({
   });
 
   const outstanding = invoices
-    .filter((i) => i.status !== "paid")
-    .reduce((sum, inv) => {
-      const paid = inv.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
-      return sum + (inv.amount - paid);
-    }, 0);
+    .filter((i) => i.status !== "paid" && i.status !== "voided")
+    .reduce((sum, inv) => sum + Math.max(0, invoiceBalance(inv)), 0);
 
   const orders = await prisma.salesOrder.findMany({
     where: { outletId: id },

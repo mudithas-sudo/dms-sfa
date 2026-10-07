@@ -43,6 +43,10 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "cancel.supervisorMaxValue", group: "Sales & credit", label: "Order cancellation / void: supervisor authority (₱)", type: "number", default: "50000", help: "Above this value a head office approver must approve." },
   { key: "credit.supervisorMaxExcess", group: "Sales & credit", label: "Credit-limit exception: supervisor authority — excess over limit (₱)", type: "number", default: "100000", help: "A larger excess escalates to the finance / credit approver." },
   { key: "creditNote.supervisorLimit", group: "Sales & credit", label: "Credit note: supervisor approval limit (₱)", type: "number", default: "5000" },
+  { key: "credit.autoAction", group: "Sales & credit", label: "Customer crossing the overdue threshold", type: "select", options: ["on_watch", "on_hold", "off"], default: "on_watch", help: "Move the customer on watch or on hold automatically (a supervisor releases it). Off: alert only." },
+  { key: "finance.docSupervisorLimit", group: "Sales & credit", label: "Debit note / adjustment: supervisor approval limit (₱)", type: "number", default: "10000", help: "Larger amounts go to head office finance. Write-offs always go to head office finance." },
+  { key: "claim.tolerancePct", group: "Promotions", label: "Claim may exceed eligible amount by up to (%)", type: "number", default: "0", help: "Anything above needs an exception approval." },
+  { key: "claim.submitWindowDays", group: "Promotions", label: "Claims accepted within (days after promotion ends)", type: "number", default: "30" },
   { key: "writeoff.approver", group: "Sales & credit", label: "Write-off approval authority", type: "select", options: ["head_office_finance"], default: "head_office_finance" },
   { key: "ageing.buckets", group: "Sales & credit", label: "Ageing buckets (days, comma separated)", type: "text", default: "30,60,90" },
   // Delivery / field

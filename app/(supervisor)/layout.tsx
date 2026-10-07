@@ -10,6 +10,8 @@ const navItems: NavItem[] = [
   { href: "/supervisor/claims", label: "Claims Review", icon: "ReceiptText" },
   { href: "/supervisor/ar-aging", label: "AR Aging", icon: "Wallet" },
   { href: "/supervisor/payment-reconciliation", label: "Payment Reconciliation", icon: "ArrowLeftRight" },
+  { href: "/supervisor/credit", label: "Credit Control", icon: "ShieldCheck" },
+  { href: "/supervisor/finance-documents", label: "Debit / Credit / Write-off", icon: "ReceiptText" },
   { href: "/supervisor/market-returns", label: "Market Returns", icon: "Undo2" },
   { href: "/supervisor/team-dashboard", label: "Team Dashboard", icon: "Users" },
   { href: "/supervisor/coverage", label: "Coverage Monitoring", icon: "MapPinned" },

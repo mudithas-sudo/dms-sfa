@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { outletBalance, postPayment } from "@/lib/finance";
 import { getSession } from "@/lib/session";
 import { priceOrder } from "@/lib/pricing";
 
@@ -17,14 +18,7 @@ export async function getRepVan(branchId: string, rep: { id: string; name: strin
 }
 
 async function outletOutstanding(outletId: string): Promise<number> {
-  const invoices = await prisma.invoice.findMany({
-    where: { outletId, status: { in: ["unpaid", "partially_paid", "overdue"] } },
-    include: { arLedgerEntries: true },
-  });
-  return invoices.reduce((sum, inv) => {
-    const paid = inv.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
-    return sum + (inv.amount - paid);
-  }, 0);
+  return Math.max(0, await outletBalance(outletId));
 }
 
 export interface CartItem {
@@ -186,56 +180,24 @@ export async function submitOrder(
 export async function recordCollection(formData: FormData) {
   const outletId = String(formData.get("outletId"));
   const method = String(formData.get("method"));
-  let amountLeft = Number(formData.get("amount"));
-  // One reference ties every ledger entry from this single collection
-  // together, so a receipt can be reconstructed after the fact.
-  const reference = String(formData.get("reference") ?? "").trim() || `OR-${Date.now()}`;
-
-  const invoices = await prisma.invoice.findMany({
-    where: { outletId, status: { in: ["unpaid", "partially_paid", "overdue"] } },
-    include: { arLedgerEntries: true },
-    orderBy: { invoiceDate: "asc" },
-  });
-
-  let runningBalance = await outletOutstanding(outletId);
-
-  for (const inv of invoices) {
-    if (amountLeft <= 0) break;
-    const alreadyPaid = inv.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
-    const invOutstanding = inv.amount - alreadyPaid;
-    if (invOutstanding <= 0) continue;
-
-    const applied = Math.min(invOutstanding, amountLeft);
-    amountLeft -= applied;
-    runningBalance -= applied;
-
-    await prisma.aRLedgerEntry.create({
-      data: {
-        outletId,
-        invoiceId: inv.id,
-        type: "payment",
-        method,
-        amount: applied,
-        balance: runningBalance,
-        reference,
-      },
+  const back = `/sfa/collections/new?outlet=${outletId}`;
+  const { userId } = await getSession();
+  const field = (k: string) => String(formData.get(k) ?? "").trim();
+  let result;
+  try {
+    result = await postPayment({
+      outletId,
+      method,
+      amount: Number(formData.get("amount")),
+      reference: field("reference"),
+      cheque: method === "cheque" ? { number: field("chequeNumber"), bank: field("chequeBank"), branch: field("chequeBranch"), date: new Date(field("chequeDate")) } : undefined,
+      collectedBy: userId ?? undefined,
     });
-
-    await prisma.invoice.update({
-      where: { id: inv.id },
-      data: { status: applied >= invOutstanding ? "paid" : "partially_paid" },
-    });
+  } catch (e) {
+    redirect(`${back}&error=${encodeURIComponent(e instanceof Error ? e.message : "Could not record the payment")}`);
   }
-
-  if (amountLeft > 0) {
-    runningBalance -= amountLeft;
-    await prisma.aRLedgerEntry.create({
-      data: { outletId, type: "payment", method, amount: amountLeft, balance: runningBalance, reference },
-    });
-  }
-
   revalidatePath(`/sfa/outlets/${outletId}`);
-  redirect(`/sfa/receipt/${encodeURIComponent(reference)}?outlet=${outletId}`);
+  redirect(`/sfa/receipt/${encodeURIComponent(result.reference)}?outlet=${outletId}`);
 }
 
 export async function checkInVisit(formData: FormData) {

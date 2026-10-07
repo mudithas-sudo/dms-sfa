@@ -1,9 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/StatusBadge";
-import { formatCurrency, formatDate } from "@/lib/format";
+import Banner from "@/components/Banner";
+import { formatDate } from "@/lib/format";
 import { processMarketReturn } from "@/app/actions/supervisor-actions";
 
-export default async function MarketReturnsPage() {
+export default async function MarketReturnsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
+  const { error, notice } = await searchParams;
   const returns = await prisma.marketReturn.findMany({
     orderBy: { createdAt: "desc" },
     include: { outlet: true, product: true, creditNote: true },
@@ -12,6 +14,8 @@ export default async function MarketReturnsPage() {
   return (
     <div className="space-y-4">
       <h2 className="text-base font-semibold text-slate-900">Market Returns</h2>
+      <p className="text-xs text-slate-500">A credit note is raised for each return. Within the supervisor limit it posts at once; above it, head office approves first. You can credit less than the full value.</p>
+      <Banner error={error} notice={notice} />
       <div className="card overflow-x-auto">
         <table className="w-full">
           <thead className="border-b border-slate-200 bg-slate-50">
@@ -36,14 +40,13 @@ export default async function MarketReturnsPage() {
                 <td className="td"><StatusBadge status={r.status} /></td>
                 <td className="td text-right">
                   {r.status === "pending" ? (
-                    <form action={processMarketReturn}>
+                    <form action={processMarketReturn} className="flex items-center justify-end gap-2">
                       <input type="hidden" name="marketReturnId" value={r.id} />
-                      <button type="submit" className="text-xs text-blue-600 hover:underline">
-                        Issue Credit Note ({formatCurrency(r.product.unitPrice * r.qty)})
-                      </button>
+                      <input className="input w-24 py-1 text-xs" type="number" step="0.01" min={0.01} max={r.product.unitPrice * r.qty} name="amount" defaultValue={r.product.unitPrice * r.qty} title="Credit amount" />
+                      <button type="submit" className="text-xs text-blue-600 hover:underline">Issue credit note</button>
                     </form>
                   ) : (
-                    r.creditNote && <span className="text-xs text-slate-400">{r.creditNote.noteNumber}</span>
+                    r.creditNote && <span className="text-xs text-slate-500">{r.creditNote.noteNumber} · {r.creditNote.status.replace(/_/g, " ")}</span>
                   )}
                 </td>
               </tr>

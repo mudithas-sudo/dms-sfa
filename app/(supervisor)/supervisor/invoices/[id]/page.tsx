@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
+import { invoiceBalance } from "@/lib/finance";
 import StatusBadge from "@/components/StatusBadge";
 import PrintButton from "@/components/PrintButton";
 import { formatCurrency, formatDate, vatBreakdown } from "@/lib/format";
@@ -20,7 +21,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   if (!invoice) notFound();
 
   const { vatableSales, vatAmount, total } = vatBreakdown(invoice.amount);
-  const paid = invoice.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
+  const paid = Math.round((invoice.amount - invoiceBalance(invoice)) * 100) / 100;
 
   return (
     <div className="mx-auto max-w-2xl space-y-4">

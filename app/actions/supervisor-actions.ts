@@ -12,6 +12,7 @@ import { applyReclass } from "@/app/actions/inventory-actions";
 import { completeHeldOrder, performOrderCancellation } from "@/app/actions/sales-actions";
 import { dueDateFor, nextInvoiceNumber, outletPosition } from "@/lib/orders";
 import { addToLot } from "@/lib/stock";
+import { applyChequeBounce, createCreditNote, invoiceBalance, outletBalance, postCreditNote, postFinancialDocument, recomputeInvoiceStatus } from "@/lib/finance";
 
 async function currentUserName(fallback: string) {
   const { userId } = await getSession();
@@ -119,6 +120,16 @@ export async function decideApproval(formData: FormData) {
   if (request.type === "credit_limit_exception" && request.amount > num(s, "credit.supervisorMaxExcess") && role !== "admin")
     fail(back, `The excess of ₱${request.amount.toLocaleString()} is above the supervisor's credit authority — escalate to the finance / credit approver at head office.`);
 
+  if (request.type === "fin_doc") {
+    const doc = request.refId ? await prisma.financialDocument.findUnique({ where: { id: request.refId } }) : null;
+    if (doc && (doc.type === "write_off" || doc.amount > num(s, "finance.docSupervisorLimit")) && role !== "admin")
+      fail(back, `${doc.type === "write_off" ? "A write-off" : "This amount"} needs head office finance approval — it is beyond the supervisor's authority.`);
+  }
+  if (request.type === "credit_note" && request.amount > num(s, "creditNote.supervisorLimit") && role !== "admin")
+    fail(back, `A credit note of ₱${request.amount.toLocaleString()} is above the supervisor limit of ₱${num(s, "creditNote.supervisorLimit").toLocaleString()} — head office must approve it.`);
+  if (request.type === "claim_exception" && request.amount > num(s, "finance.docSupervisorLimit") && role !== "admin")
+    fail(back, "This claim exception is above the supervisor's authority — head office must approve it.");
+
   await prisma.approvalRequest.update({ where: { id }, data: { status: decision, decidedBy: decider, decisionNote, decidedAt: new Date() } });
   await logAudit("ApprovalRequest", id, decision === "approved" ? "approve" : "reject", `${decision === "approved" ? "Approved" : "Rejected"} ${request.type.replace(/_/g, " ")} — ${request.reason.slice(0, 120)}${decisionNote ? ` (${decisionNote})` : ""}`, { before: { status: "pending" }, after: { status: decision } });
 
@@ -155,8 +166,8 @@ export async function decideApproval(formData: FormData) {
       for (const invoice of order.invoices) {
         if (invoice.status === "voided") continue;
         await prisma.invoice.update({ where: { id: invoice.id }, data: { status: "voided" } });
-        const net = invoice.arLedgerEntries.reduce((sum, e) => sum + (e.type === "invoice" ? e.amount : e.type === "payment" ? -e.amount : e.type === "adjustment" ? e.amount : 0), 0);
-        const lastBalance = invoice.arLedgerEntries.at(-1)?.balance ?? invoice.amount;
+        const net = invoiceBalance(invoice);
+        const lastBalance = await outletBalance(order.outletId);
         await prisma.aRLedgerEntry.create({ data: { outletId: order.outletId, invoiceId: invoice.id, type: "void_reversal", amount: -net, balance: lastBalance - net, reference: `VOID-${invoice.invoiceNumber}` } });
       }
       await logAudit("SalesOrder", order.id, "void", `Voided ${order.orderNumber} — ${request.reason}`, { before: { status: order.status }, after: { status: "voided" } });
@@ -172,11 +183,7 @@ export async function decideApproval(formData: FormData) {
       });
       await prisma.aRLedgerEntry.update({ where: { id: entry.id }, data: { recStatus: "reversed", paymentStatus: entry.method === "cheque" ? "bounced" : entry.paymentStatus } });
       if (entry.invoiceId && entry.type === "payment") {
-        const invoice = await prisma.invoice.findUnique({ where: { id: entry.invoiceId }, include: { arLedgerEntries: true } });
-        if (invoice) {
-          const paidNow = invoice.arLedgerEntries.filter((e) => e.type === "payment" && e.id !== entry.id && e.recStatus !== "reversed").reduce((sum, e) => sum + e.amount, 0);
-          await prisma.invoice.update({ where: { id: invoice.id }, data: { status: paidNow <= 0 ? "unpaid" : paidNow < invoice.amount ? "partially_paid" : "paid" } });
-        }
+        await recomputeInvoiceStatus(entry.invoiceId);
       }
       await logAudit("ARLedgerEntry", entry.id, "reverse", `Reversed ${entry.type} of ₱${entry.amount.toLocaleString()} — ${request.reason}`, { before: { type: entry.type, amount: entry.amount }, after: { type: "reversal", amount: -entry.amount } });
     }
@@ -198,7 +205,47 @@ export async function decideApproval(formData: FormData) {
     await applyReclass(request.refId, p.qty, p.from, p.to, `${p.reason} (approved by ${decider})`, decider);
   }
 
+  // --- debit note / adjustment / write-off: posts to the ledger only once approved
+  if (request.type === "fin_doc" && request.refId) {
+    if (decision === "approved") await postFinancialDocument(request.refId, decider, decisionNote);
+    else await prisma.financialDocument.update({ where: { id: request.refId }, data: { status: "rejected", approvedBy: decider, decisionNote: decisionNote || null, decidedAt: new Date() } });
+    await notify({ role: "supervisor", branchId: request.branchId, title: `Financial document ${decision}`, body: request.reason.slice(0, 120), link: "/supervisor/finance-documents", kind: "info" });
+  }
+
+  // --- credit note above the supervisor's limit
+  if (request.type === "credit_note" && request.refId) {
+    if (decision === "approved") await postCreditNote(request.refId, decider);
+    else {
+      await prisma.creditNote.update({ where: { id: request.refId }, data: { status: "rejected", approvedBy: decider, decisionNote: decisionNote || null } });
+      await prisma.marketReturn.updateMany({ where: { creditNoteId: request.refId }, data: { status: "pending", creditNoteId: null } });
+    }
+  }
+
+  // --- promotion claim above the eligible amount
+  if (request.type === "claim_exception" && request.refId) {
+    const claim = await prisma.claim.findUnique({ where: { id: request.refId } });
+    if (claim && claim.status === "draft") {
+      if (decision === "approved") {
+        await prisma.claim.update({ where: { id: claim.id }, data: { exceptionApproved: true } });
+        await prisma.claimStatusHistory.create({ data: { claimId: claim.id, status: "draft", changedBy: decider, reason: `Exception approved${decisionNote ? `: ${decisionNote}` : ""} — ready to submit` } });
+      } else {
+        await prisma.claim.update({ where: { id: claim.id }, data: { status: "rejected" } });
+        await prisma.claimStatusHistory.create({ data: { claimId: claim.id, status: "rejected", changedBy: decider, reason: `Exception declined${decisionNote ? `: ${decisionNote}` : ""}` } });
+      }
+      await notify({ userId: claim.submittedById, title: `Claim exception ${decision}`, body: claim.claimNumber, link: `/supervisor/claims/${claim.id}`, kind: decision === "approved" ? "info" : "alert" });
+    }
+  }
+
+  // --- cheque that bounced after clearing: reverse the payments
+  if (request.type === "cheque_bounce" && request.refId && request.outletId && decision === "approved") {
+    const p = JSON.parse(request.payload ?? "{}") as { reason?: string };
+    await applyChequeBounce(request.outletId, request.refId, p.reason ?? "Returned by the bank");
+  }
+
   revalidatePath("/supervisor/approvals");
+  revalidatePath("/supervisor/finance-documents");
+  revalidatePath("/supervisor/claims");
+  revalidatePath("/supervisor/credit");
   revalidatePath("/supervisor/payment-reconciliation");
   revalidatePath("/supervisor/ar-aging");
   revalidatePath("/supervisor/orders");
@@ -238,51 +285,18 @@ export async function requestOrderVoid(formData: FormData) {
   redirect("/supervisor/approvals");
 }
 
-// Settling a market return issues a credit note, which posts a negative AR ledger entry.
+// Settling a market return raises a credit note: within the supervisor's limit it posts at once, above it the
+// note waits for head office approval. The amount can be reduced (partial credit) but never raised.
 export async function processMarketReturn(formData: FormData) {
+  await assertCan("finance", "edit");
   const marketReturnId = String(formData.get("marketReturnId"));
-  const issuer = await currentUserName("Supervisor");
   const marketReturn = await prisma.marketReturn.findUniqueOrThrow({ where: { id: marketReturnId }, include: { product: true } });
-  const amount = marketReturn.product.unitPrice * marketReturn.qty;
-  const noteCount = await prisma.creditNote.count();
-  const creditNote = await prisma.creditNote.create({
-    data: { noteNumber: `CN-${String(noteCount + 1).padStart(4, "0")}`, outletId: marketReturn.outletId, amount, reason: `Market return: ${marketReturn.reason}`, issuedBy: issuer },
-  });
-  await prisma.marketReturn.update({ where: { id: marketReturnId }, data: { status: "processed", creditNoteId: creditNote.id } });
-  const pos = await outletPosition(marketReturn.outletId);
-  await prisma.aRLedgerEntry.create({ data: { outletId: marketReturn.outletId, type: "credit_note", amount: -amount, balance: pos.outstanding - amount, reference: creditNote.noteNumber } });
+  if (marketReturn.status !== "pending") redirect("/supervisor/market-returns");
+  const full = marketReturn.product.unitPrice * marketReturn.qty;
+  const asked = Number(formData.get("amount") ?? full);
+  const amount = Math.min(full, Number.isFinite(asked) && asked > 0 ? asked : full);
+  const { note, needsApproval } = await createCreditNote({ outletId: marketReturn.outletId, invoiceId: marketReturn.invoiceId, amount, reason: `Market return: ${marketReturn.reason.replace(/_/g, " ")}${marketReturn.outsidePolicy ? " (outside return policy)" : ""}` });
+  await prisma.marketReturn.update({ where: { id: marketReturnId }, data: { status: "processed", creditNoteId: note.id } });
   revalidatePath("/supervisor/market-returns");
-}
-
-export async function decideClaim(formData: FormData) {
-  const id = String(formData.get("id"));
-  const decision = String(formData.get("decision"));
-  const reason = String(formData.get("reason") ?? "");
-  const decider = await currentUserName("Supervisor");
-  await prisma.claim.update({ where: { id }, data: { status: decision } });
-  await prisma.claimStatusHistory.create({ data: { claimId: id, status: decision, changedBy: decider, reason: reason || null } });
-  revalidatePath("/supervisor/claims");
-  revalidatePath(`/supervisor/claims/${id}`);
-}
-
-// Manually match a lump-sum payment against one or more specific invoices.
-export async function reconcilePayment(formData: FormData) {
-  const outletId = String(formData.get("outletId"));
-  const method = String(formData.get("method"));
-  const reference = String(formData.get("reference") ?? "");
-  const invoiceIds = formData.getAll("invoiceId").map(String);
-  const invoices = await prisma.invoice.findMany({ where: { id: { in: invoiceIds } }, include: { arLedgerEntries: true } });
-  let runningBalance = (await outletPosition(outletId)).outstanding;
-  for (const invoice of invoices) {
-    const amount = Number(formData.get(`amount_${invoice.id}`) ?? 0);
-    if (amount <= 0) continue;
-    const alreadyPaid = invoice.arLedgerEntries.filter((e) => e.type === "payment").reduce((s, e) => s + e.amount, 0);
-    const outstanding = invoice.amount - alreadyPaid;
-    const applied = Math.min(amount, outstanding);
-    runningBalance -= applied;
-    await prisma.aRLedgerEntry.create({ data: { outletId, invoiceId: invoice.id, type: "payment", method, amount: applied, balance: runningBalance, reference: reference || undefined } });
-    await prisma.invoice.update({ where: { id: invoice.id }, data: { status: applied >= outstanding ? "paid" : "partially_paid" } });
-  }
-  revalidatePath("/supervisor/payment-reconciliation");
-  redirect("/supervisor/payment-reconciliation");
+  redirect(`/supervisor/market-returns?notice=${encodeURIComponent(needsApproval ? `Credit note ${note.noteNumber} is above your limit and has gone to head office for approval.` : `Credit note ${note.noteNumber} issued.`)}`);
 }
