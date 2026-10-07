@@ -7,7 +7,7 @@ interface NotifyInput {
   title: string;
   body: string;
   link?: string;
-  kind?: "info" | "alert" | "approval";
+  kind?: "info" | "alert" | "approval" | "action";
 }
 
 // Writes an on-screen notification. Delivery by e-mail / push is a configuration

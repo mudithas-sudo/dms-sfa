@@ -14,9 +14,10 @@ const navItems: NavItem[] = [
   { href: "/branch/picklists", label: "Picklists", icon: "ClipboardCheck" },
   { href: "/branch/deliveries", label: "Deliveries", icon: "PackageCheck" },
   { href: "/branch/van-loading", label: "Van Loading", icon: "Truck" },
+  { href: "/branch/van-stock", label: "Van Stock Balances", icon: "Boxes" },
   { href: "/branch/van-returns", label: "Van Returns", icon: "Undo2" },
   { href: "/branch/supplier-returns", label: "Returns to Central Warehouse", icon: "Undo2" },
-  { href: "/branch/replenishment-requests", label: "Replenishment Requests", icon: "Inbox" },
+  { href: "/branch/replenishment-requests", label: "Van Stock Requests", icon: "Inbox" },
   { href: "/branch/eod-reconciliation", label: "End-of-Day Reconciliation", icon: "CalendarCheck" },
 ];
 

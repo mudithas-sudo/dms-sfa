@@ -55,6 +55,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "visit.minDurationMin", group: "Delivery & field", label: "Short-visit flag below (minutes)", type: "number", default: "3" },
   { key: "attendance.standardStart", group: "Delivery & field", label: "Standard day start (HH:MM)", type: "text", default: "08:30" },
   { key: "van.eodToleranceUnits", group: "Delivery & field", label: "Van end-of-day tolerance (units per SKU)", type: "number", default: "2" },
+  { key: "van.damagePhotoQty", group: "Delivery & field", label: "Photo mandatory when marking damaged at or above (units)", type: "number", default: "10" },
   { key: "van.cashTolerance", group: "Delivery & field", label: "Van cash variance tolerance (₱)", type: "number", default: "50" },
   { key: "return.periodDays", group: "Delivery & field", label: "Market return period (days after invoice)", type: "number", default: "14" },
   { key: "receipt.maxReprints", group: "Delivery & field", label: "Receipt reprints allowed", type: "number", default: "2" },

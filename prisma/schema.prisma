@@ -394,6 +394,7 @@ model VanReturn {
   qty         Int
   condition   String   @default("good") // good | damaged
   reason      String?
+  returnNumber String?
   qtyDeclared Int?
   qtyReceived Int?
   varianceReason String?
@@ -919,6 +920,8 @@ model VanLoadLine {
   qty       Int
   qtyApproved Int?
   varianceReason String?
+  qtyAcknowledged Int?   // what the rep confirmed receiving on the device
+  ackReason String?
   lotNumber String
 }
 
@@ -1362,4 +1365,68 @@ model OrderAllocation {
   createdAt        DateTime @default(now())
 
   @@index([salesOrderLineId])
+}
+
+// ---------------------------------------------------------------------------
+// Van counts and end-of-day van reconciliation
+// ---------------------------------------------------------------------------
+
+model VanStockCount {
+  id        String   @id @default(cuid())
+  vanId     String
+  countedBy String
+  countType String   @default("spot") // start_of_day | mid_day | end_of_day | spot
+  blind     Boolean  @default(false)
+  status    String   @default("submitted")
+  createdAt DateTime @default(now())
+
+  lines VanStockCountLine[]
+}
+
+model VanStockCountLine {
+  id             String        @id @default(cuid())
+  countId        String
+  count          VanStockCount @relation(fields: [countId], references: [id])
+  productId      String
+  lotNumber      String
+  systemGood     Int
+  systemDamaged  Int
+  countedGood    Int
+  countedDamaged Int
+  variance       Int
+  remark         String?
+}
+
+model VanReconciliation {
+  id          String    @id @default(cuid())
+  vanId       String
+  dayDate     DateTime
+  status      String    @default("open") // closed | pending_ack | variance_open | escalated | carried_over
+  countedBy   String?
+  cause       String?
+  approvedBy  String?
+  note        String?
+  closedAt    DateTime?
+  createdAt   DateTime  @default(now())
+
+  lines VanReconciliationLine[]
+
+  @@unique([vanId, dayDate])
+}
+
+model VanReconciliationLine {
+  id               String            @id @default(cuid())
+  reconciliationId String
+  reconciliation   VanReconciliation @relation(fields: [reconciliationId], references: [id])
+  productId        String
+  opening          Int
+  loaded           Int
+  sold             Int
+  returned         Int
+  adjusted         Int
+  expected         Int
+  counted          Int
+  variance         Int
+  outcome          String   // none | within_tolerance | shortage | excess
+  resolution       String?  // approved_adjustment | explained | escalated
 }
