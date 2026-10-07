@@ -366,7 +366,8 @@ export async function generatePicklist(formData: FormData) {
   const orders = await prisma.salesOrder.findMany({ where: { id: { in: orderIds }, branchId, status: "confirmed" }, include: { lines: true, outlet: { include: { route: true } } } });
   if (orders.length === 0) fail(back, "Picklists are generated only from confirmed, allocated orders.");
   const user = await actorName("Warehouse");
-  const last = await prisma.picklist.findFirst({ where: { branchId }, orderBy: { picklistNumber: "desc" }, select: { picklistNumber: true } });
+  // the picklist number is unique across all branches, so the sequence is too
+  const last = await prisma.picklist.findFirst({ orderBy: { picklistNumber: "desc" }, select: { picklistNumber: true } });
   const seq = last ? Number(last.picklistNumber.replace(/\D/g, "")) + 1 : 1;
   const routes = [...new Set(orders.map((o) => o.outlet.route?.name).filter(Boolean))];
   const pl = await prisma.picklist.create({

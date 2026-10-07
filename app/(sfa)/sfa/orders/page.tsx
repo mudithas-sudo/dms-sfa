@@ -36,8 +36,8 @@ export default async function OrderHistoryPage({ searchParams }: { searchParams:
                   <p className="text-xs text-slate-500">{o.outlet.name} · {formatCurrency(o.total)}</p>
                 </div>
                 <div className="flex items-center gap-3 text-xs">
-                  <Link href={`/sfa/order/new?draft=${o.id}`} className="text-blue-600 underline">Amend</Link>
-                  <form action={deleteDraftAction}><input type="hidden" name="id" value={o.id} /><button className="text-rose-600 underline" type="submit">Delete</button></form>
+                  <Link href={`/sfa/order/new?draft=${o.id}`} className="inline-flex min-h-[44px] items-center px-2 text-blue-600 underline">Amend</Link>
+                  <form action={deleteDraftAction}><input type="hidden" name="id" value={o.id} /><button className="inline-flex min-h-[44px] items-center px-2 text-rose-600 underline" type="submit">Delete</button></form>
                 </div>
               </div>
             ))}

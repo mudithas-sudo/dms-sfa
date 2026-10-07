@@ -33,12 +33,12 @@ export default async function SfaReportsPage({ searchParams }: { searchParams: P
       <h2 className="text-base font-semibold text-slate-900">My Reports</h2>
       <div className="flex gap-1.5 overflow-x-auto pb-1">
         {LIST.map((l) => (
-          <Link key={l.id} href={`/sfa/reports?r=${l.id}&days=${days}`} className={`shrink-0 rounded-full px-3 py-1 text-xs ${def.id === l.id ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>{l.label}</Link>
+          <Link key={l.id} href={`/sfa/reports?r=${l.id}&days=${days}`} className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full px-4 text-xs ${def.id === l.id ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>{l.label}</Link>
         ))}
       </div>
       <div className="flex gap-1.5 text-xs">
         {["1", "7", "30"].map((d) => (
-          <Link key={d} href={`/sfa/reports?r=${def.id}&days=${d}`} className={`rounded-full px-2.5 py-0.5 ${days === d ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{d === "1" ? "Today" : `${d} days`}</Link>
+          <Link key={d} href={`/sfa/reports?r=${def.id}&days=${d}`} className={`inline-flex min-h-[40px] items-center rounded-full px-4 ${days === d ? "bg-slate-800 text-white" : "bg-slate-100 text-slate-600"}`}>{d === "1" ? "Today" : `${d} days`}</Link>
         ))}
       </div>
       <p className="text-[11px] text-slate-500">{def.title} · run {new Date().toLocaleString("en-PH")} for {me?.name}</p>

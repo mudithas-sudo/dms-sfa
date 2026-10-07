@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useEffect, useMemo, useRef, useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { fieldOrderContext, previewFieldOrder, submitFieldOrder, suggestedQuantities, type SubmitInput, type SubmitResult } from "@/app/actions/sfa-order-actions";
 import SignaturePad from "@/components/SignaturePad";
@@ -28,8 +28,8 @@ const peso = (n: number) => `₱${n.toLocaleString("en-PH", { minimumFractionDig
 const TONE = { pass: "text-emerald-700", warn: "text-amber-700", block: "text-rose-700" } as const;
 const ICON = { pass: "✓", warn: "!", block: "✕" } as const;
 
-// The field order screen: customer position and delivery calendar, a filterable catalogue with live pricing and
-// promotion hints, the same validation results the branch sees, and a pre-sales or van-sale choice.
+// The field order screen reads top to bottom as four short steps — customer, products, delivery, review & submit.
+// Nothing is fixed to the screen: the Submit and Save draft buttons are the last thing on the page, below the totals.
 export default function FieldOrderForm({
   outlets, products, promoLabels, defaultOutletId, draft,
 }: {
@@ -63,6 +63,14 @@ export default function FieldOrderForm({
   const [override, setOverride] = useState(0);
   const [overrideReason, setOverrideReason] = useState("");
   const [msg, setMsg] = useState<{ ok: boolean; text: string } | null>(null);
+  const [visibleCount, setVisibleCount] = useState(10);
+  const [sending, setSending] = useState<"submit" | "draft" | null>(null);
+  const msgRef = useRef<HTMLDivElement>(null);
+
+  // Bring the result of Submit / Save draft into view: the message sits just above the buttons at the end of the form.
+  useEffect(() => {
+    if (msg) msgRef.current?.scrollIntoView({ block: "center" });
+  }, [msg]);
 
   const items = useMemo(() => Object.entries(qty).filter(([, q]) => q > 0).map(([productId, q]) => ({ productId, qty: q })), [qty]);
   const key = JSON.stringify([outletId, items, orderType, override]);
@@ -119,8 +127,10 @@ export default function FieldOrderForm({
       enqueue({ id: clientRef, kind: "order", label: `${outlets.find((o) => o.id === outletId)?.name ?? "Order"} · ${items.length} lines`, payload: input });
       return setMsg({ ok: true, text: "Saved on the device — it will be sent from the Sync centre when you are back online." });
     }
+    setSending(intent);
     start(async () => {
       const r: SubmitResult = await submitFieldOrder(input);
+      setSending(null);
       setMsg({ ok: r.ok, text: r.message });
       if (r.ok && r.status !== "draft") setTimeout(() => router.push(`/sfa/orders?highlight=${r.orderNumber}`), 1200);
     });
@@ -128,153 +138,199 @@ export default function FieldOrderForm({
 
   const unitLabel = (p: Product) => (packMode[p.id] && p.unitsPerPack > 1 ? `pack ×${p.unitsPerPack}` : "pc");
   const days = ctx?.calendar.days ?? [];
+  const filterCount = [brand, category, promoOnly].filter(Boolean).length;
+  const filtering = !!search || filterCount > 0;
+  const visible = filtering ? shown : shown.slice(0, visibleCount);
+  const hint = items.length === 0 ? "Add at least one product to continue." : null;
 
   return (
-    <div className="space-y-3 pb-24">
-      <div className="card space-y-2 p-3">
-        <label className="label" htmlFor="outlet">Customer</label>
-        <select className="input" id="outlet" value={outletId} onChange={(e) => setOutletId(e.target.value)}>
+    <div className="space-y-4">
+      <Section n={1} title="Customer">
+        <select className="input" id="outlet" aria-label="Customer" value={outletId} onChange={(e) => setOutletId(e.target.value)}>
           {outlets.map((o) => (
             <option key={o.id} value={o.id}>{o.name}</option>
           ))}
         </select>
         {ctx && (
-          <div className="rounded-lg bg-slate-50 p-2 text-xs text-slate-600">
-            <p>
-              Credit limit {peso(ctx.outlet.creditLimit)} · owes {peso(ctx.position.outstanding)} · open orders {peso(ctx.position.openOrderValue)} ·{" "}
-              <strong className={ctx.available < 0 ? "text-rose-600" : "text-slate-900"}>available {peso(ctx.available)}</strong>
-            </p>
+          <div className="rounded-lg bg-slate-50 p-3 text-xs leading-relaxed text-slate-600">
+            <div className="grid grid-cols-3 gap-2 text-center">
+              <div><p className="text-[10px] text-slate-500">Credit limit</p><p className="font-semibold text-slate-900">{peso(ctx.outlet.creditLimit)}</p></div>
+              <div><p className="text-[10px] text-slate-500">Owes</p><p className="font-semibold text-slate-900">{peso(ctx.position.outstanding)}</p></div>
+              <div><p className="text-[10px] text-slate-500">Available</p><p className={`font-semibold ${ctx.available < 0 ? "text-rose-600" : "text-emerald-700"}`}>{peso(ctx.available)}</p></div>
+            </div>
+            {ctx.position.openOrderValue > 0 && <p className="mt-2">Open orders not yet invoiced: {peso(ctx.position.openOrderValue)}</p>}
             {ctx.outlet.creditStatus !== "active" && <p className="mt-1 font-medium text-amber-700">Credit status: {ctx.outlet.creditStatus.replace("_", " ")}</p>}
             {ctx.position.overdueAmount > 0 && <p className="mt-1 font-medium text-rose-600">Overdue {peso(ctx.position.overdueAmount)} ({ctx.position.oldestOverdueDays} days, {ctx.overdueInvoices} invoice(s)) — consider collecting before selling.</p>}
             {ctx.dataAge && <p className="mt-1 text-amber-700">{ctx.dataAge}</p>}
           </div>
         )}
-        <div className="grid grid-cols-2 gap-2">
-          <button type="button" onClick={() => setOrderType("pre_sales")} className={`rounded-lg border px-2 py-2 text-xs font-medium ${orderType === "pre_sales" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"}`}>
-            Pre-sales order<span className="block text-[10px] font-normal">delivered later from the warehouse</span>
+        <div className="grid grid-cols-2 gap-2" role="group" aria-label="Order type">
+          <button type="button" aria-pressed={orderType === "pre_sales"} onClick={() => setOrderType("pre_sales")} className={`min-h-[56px] rounded-lg border px-2 py-2 text-sm font-medium ${orderType === "pre_sales" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"}`}>
+            Pre-sales order<span className="block text-[11px] font-normal">delivered later from the warehouse</span>
           </button>
-          <button type="button" disabled={!ctx?.hasVan} onClick={() => setOrderType("van_sale")} className={`rounded-lg border px-2 py-2 text-xs font-medium disabled:opacity-40 ${orderType === "van_sale" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"}`}>
-            Van sale<span className="block text-[10px] font-normal">sold &amp; delivered now from your van</span>
+          <button type="button" aria-pressed={orderType === "van_sale"} disabled={!ctx?.hasVan} onClick={() => setOrderType("van_sale")} className={`min-h-[56px] rounded-lg border px-2 py-2 text-sm font-medium disabled:opacity-40 ${orderType === "van_sale" ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"}`}>
+            Van sale<span className="block text-[11px] font-normal">sold &amp; delivered now from your van</span>
           </button>
         </div>
-      </div>
+      </Section>
 
-      <div className="card space-y-2 p-3">
-        <input className="input" placeholder="Search name or code" value={search} onChange={(e) => setSearch(e.target.value)} />
-        <div className="grid grid-cols-2 gap-2">
-          <select className="input py-1 text-xs" value={brand} onChange={(e) => setBrand(e.target.value)}><option value="">All brands</option>{brands.map((b) => <option key={b}>{b}</option>)}</select>
-          <select className="input py-1 text-xs" value={category} onChange={(e) => setCategory(e.target.value)}><option value="">All categories</option>{categories.map((c) => <option key={c}>{c}</option>)}</select>
+      <Section
+        n={2}
+        title="Products"
+        aside={
+          <a href="#review" className="inline-flex min-h-[40px] items-center rounded-full bg-blue-50 px-4 text-xs font-medium text-blue-700">
+            {items.length === 0 ? "Cart empty" : `${items.length} line${items.length === 1 ? "" : "s"} · ${preview ? peso(preview.total) : "…"}`}
+          </a>
+        }
+      >
+        <input className="input" type="search" placeholder="Search name or code" aria-label="Search products" value={search} onChange={(e) => setSearch(e.target.value)} />
+        <div className="flex flex-wrap items-center gap-2">
+          <button type="button" className="min-h-[40px] rounded-full border border-slate-200 px-3 text-xs font-medium text-blue-700 disabled:text-slate-300" onClick={reorderLast} disabled={!ctx?.lastOrder}>Reorder last{ctx?.lastOrder ? ` (${ctx.lastOrder.number})` : ""}</button>
+          <button type="button" className="min-h-[40px] rounded-full border border-slate-200 px-3 text-xs font-medium text-blue-700" onClick={suggest}>Suggested quantities</button>
         </div>
-        <div className="flex flex-wrap items-center gap-3 text-xs">
-          <label className="flex items-center gap-1"><input type="checkbox" checked={promoOnly} onChange={(e) => setPromoOnly(e.target.checked)} /> Promoted only</label>
-          <button type="button" className="text-blue-600 underline" onClick={reorderLast} disabled={!ctx?.lastOrder}>Reorder last{ctx?.lastOrder ? ` (${ctx.lastOrder.number})` : ""}</button>
-          <button type="button" className="text-blue-600 underline" onClick={suggest}>Suggested</button>
-        </div>
+        <details className="rounded-lg border border-slate-200 text-xs" open={filterCount > 0}>
+          <summary className="flex min-h-[44px] cursor-pointer items-center justify-between px-3 text-slate-700">
+            <span>Filters{filterCount ? ` (${filterCount})` : ""}</span>
+            {filterCount > 0 && <span className="text-[11px] text-blue-600">{filterCount} active</span>}
+          </summary>
+          <div className="space-y-2 border-t border-slate-100 p-3">
+            <div className="grid grid-cols-2 gap-2">
+              <select className="input" aria-label="Brand" value={brand} onChange={(e) => setBrand(e.target.value)}><option value="">All brands</option>{brands.map((b) => <option key={b}>{b}</option>)}</select>
+              <select className="input" aria-label="Category" value={category} onChange={(e) => setCategory(e.target.value)}><option value="">All categories</option>{categories.map((c) => <option key={c}>{c}</option>)}</select>
+            </div>
+            <label className="flex min-h-[44px] items-center gap-2 text-sm"><input className="h-5 w-5" type="checkbox" checked={promoOnly} onChange={(e) => setPromoOnly(e.target.checked)} /> Promoted products only</label>
+            {filterCount > 0 && <button type="button" className="min-h-[40px] text-xs font-medium text-blue-600" onClick={() => { setBrand(""); setCategory(""); setPromoOnly(false); }}>Clear filters</button>}
+          </div>
+        </details>
         {ctx && ctx.topProducts.length > 0 && (
-          <p className="text-[11px] text-slate-500">Top products here: {ctx.topProducts.map((t) => `${pmap.get(t.productId)?.name ?? "?"} (${t.qty})`).join(", ")}</p>
+          <p className="text-xs text-slate-500">Top products here: {ctx.topProducts.map((t) => `${pmap.get(t.productId)?.name ?? "?"} (${t.qty})`).join(", ")}</p>
         )}
-        <div className="max-h-80 divide-y divide-slate-100 overflow-y-auto rounded-lg border border-slate-200 bg-white">
-          {shown.map((p) => {
+        <ul className="divide-y divide-slate-100 rounded-lg border border-slate-200 bg-white">
+          {visible.map((p) => {
             const l = lineOf(p.id);
             const base = qty[p.id] ?? 0;
             const factor = packMode[p.id] && p.unitsPerPack > 1 ? p.unitsPerPack : 1;
             const stock = ctx?.sellable[p.id];
             return (
-              <div key={p.id} className="px-2 py-1.5">
-                <div className="flex items-start gap-2">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-slate-100 text-[10px] font-semibold text-slate-400">{p.sku.slice(-3)}</div>
+              <li key={p.id} className={`px-3 py-3 ${base > 0 ? "bg-blue-50/40" : ""}`}>
+                <div className="flex items-start gap-3">
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-[11px] font-semibold text-slate-500">{p.sku.slice(-3)}</div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate text-xs font-medium text-slate-900">{p.name}</p>
-                    <p className="text-[10px] text-slate-500">{p.brand ?? p.category} · {peso(p.unitPrice)} · min {p.minOrderQty}{p.packMultiple > 1 ? ` · ×${p.packMultiple}` : ""}{orderType === "van_sale" && stock !== undefined ? ` · van ${stock}` : ""}</p>
-                    {promoLabels[p.id] && <p className="text-[10px] font-medium text-emerald-700">🎁 {promoLabels[p.id]}</p>}
-                    {preview?.hints[p.id] && <p className="text-[10px] text-blue-600">{preview.hints[p.id]}</p>}
-                    {l && base > 0 && <p className="text-[10px] text-slate-600">{peso(l.lineTotal)}{l.discount > 0 ? ` (−${peso(l.discount)}${l.promos.length ? ` · ${l.promos.join(", ")}` : ""})` : ""}{l.free ? ` · ${l.free} free` : ""}</p>}
-                  </div>
-                  <div className="flex flex-col items-end gap-0.5">
-                    <input className="input w-16 py-1 text-right text-xs" type="number" min={0} value={base ? Math.round(base / factor) : ""} placeholder="0" onChange={(e) => setBase(p.id, Number(e.target.value) * factor)} />
-                    {p.unitsPerPack > 1 ? (
-                      <button type="button" className="text-[10px] text-blue-600 underline" onClick={() => setPackMode((s) => ({ ...s, [p.id]: !s[p.id] }))}>{unitLabel(p)}</button>
-                    ) : (
-                      <span className="text-[10px] text-slate-400">pc</span>
-                    )}
+                    <p className="text-sm font-medium leading-snug text-slate-900">{p.name}</p>
+                    <p className="text-xs text-slate-500">{p.brand ?? p.category} · {peso(p.unitPrice)} · min {p.minOrderQty}{p.packMultiple > 1 ? ` · ×${p.packMultiple}` : ""}{orderType === "van_sale" && stock !== undefined ? ` · van ${stock}` : ""}</p>
+                    {promoLabels[p.id] && <p className="mt-0.5 text-xs font-medium text-emerald-700">🎁 {promoLabels[p.id]}</p>}
+                    {preview?.hints[p.id] && <p className="mt-0.5 text-xs text-blue-600">{preview.hints[p.id]}</p>}
+                    {l && base > 0 && <p className="mt-0.5 text-xs font-medium text-slate-700">{peso(l.lineTotal)}{l.discount > 0 ? ` (−${peso(l.discount)}${l.promos.length ? ` · ${l.promos.join(", ")}` : ""})` : ""}{l.free ? ` · ${l.free} free` : ""}</p>}
                   </div>
                 </div>
-              </div>
+                <div className="mt-2 flex items-center justify-between gap-2">
+                  {p.unitsPerPack > 1 ? (
+                    <button type="button" className="min-h-[40px] rounded-full border border-slate-200 px-3 text-xs font-medium text-blue-700" onClick={() => setPackMode((s) => ({ ...s, [p.id]: !s[p.id] }))}>By {unitLabel(p)} — switch</button>
+                  ) : (
+                    <span className="text-xs text-slate-400">By piece</span>
+                  )}
+                  <div className="flex items-center gap-1">
+                    <button type="button" aria-label={`Remove one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-medium text-slate-700 active:bg-slate-100 disabled:opacity-30" disabled={base === 0} onClick={() => setBase(p.id, base - factor)}>−</button>
+                    <input className="input h-11 w-16 text-center" type="number" inputMode="numeric" min={0} aria-label={`Quantity of ${p.name}`} value={base ? Math.round(base / factor) : ""} placeholder="0" onChange={(e) => setBase(p.id, Number(e.target.value) * factor)} />
+                    <button type="button" aria-label={`Add one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 text-lg font-medium text-white active:bg-blue-700" onClick={() => setBase(p.id, base + factor)}>+</button>
+                  </div>
+                </div>
+              </li>
             );
           })}
-        </div>
-      </div>
+          {visible.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-400">No products match.</li>}
+        </ul>
+        {!filtering && shown.length > visibleCount && (
+          <button type="button" className="btn-secondary w-full" onClick={() => setVisibleCount((n) => n + 10)}>Show {Math.min(10, shown.length - visibleCount)} more ({shown.length - visibleCount} remaining)</button>
+        )}
+      </Section>
 
       {orderType === "pre_sales" && (
-        <div className="card space-y-2 p-3">
-          <p className="text-xs font-semibold text-slate-900">Delivery</p>
-          <p className="text-[11px] text-slate-500">Orders placed before {ctx?.calendar.cutoffHour ?? 14}:00 follow the standard lead time. Earliest date: <strong>{ctx?.calendar.earliest}</strong></p>
-          <div className="flex flex-wrap gap-1">
+        <Section n={3} title="Delivery">
+          <p className="text-xs text-slate-500">Orders placed before {ctx?.calendar.cutoffHour ?? 14}:00 follow the standard lead time. Earliest date: <strong>{ctx?.calendar.earliest}</strong></p>
+          <div className="flex flex-wrap gap-2">
             {days.map((d) => (
-              <button key={d.date} type="button" disabled={!d.ok && !urgent} title={d.reason ?? ""} onClick={() => setDate(d.date)} className={`rounded-md border px-2 py-1 text-[10px] ${date === d.date ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"} disabled:bg-slate-50 disabled:text-slate-300 disabled:line-through`}>
+              <button key={d.date} type="button" disabled={!d.ok && !urgent} title={d.reason ?? ""} aria-pressed={date === d.date} onClick={() => setDate(d.date)} className={`min-h-[44px] rounded-lg border px-3 text-xs font-medium ${date === d.date ? "border-blue-600 bg-blue-50 text-blue-700" : "border-slate-200 text-slate-600"} disabled:bg-slate-50 disabled:text-slate-300 disabled:line-through`}>
                 {d.label}
               </button>
             ))}
           </div>
-          <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} /> Urgent request (outside the calendar — flagged to the branch)</label>
+          <label className="flex min-h-[44px] items-center gap-2 text-sm"><input className="h-5 w-5" type="checkbox" checked={urgent} onChange={(e) => setUrgent(e.target.checked)} /> Urgent request — outside the calendar, flagged to the branch</label>
           {urgent && <input className="input" placeholder="Why is it urgent? *" value={urgentReason} onChange={(e) => setUrgentReason(e.target.value)} />}
-        </div>
-      )}
-
-      <div className="card space-y-2 p-3">
-        <input className="input" placeholder="Remarks (optional)" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
-        <details className="text-xs">
-          <summary className="cursor-pointer text-slate-600">Request a discount beyond the rules</summary>
-          <div className="mt-2 grid grid-cols-[80px_1fr] gap-2">
-            <input className="input" type="number" min={0} max={100} value={override || ""} placeholder="%" onChange={(e) => setOverride(Number(e.target.value))} />
-            <input className="input" placeholder="Reason (required)" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} />
-          </div>
-        </details>
-      </div>
-
-      {preview && (
-        <div className="card space-y-1 p-3">
-          <p className="text-xs font-semibold text-slate-900">Checks {busy && <span className="font-normal text-slate-400">— updating…</span>}</p>
-          {preview.checks.filter((c) => c.outcome !== "pass").map((c) => (
-            <p key={c.id} className={`text-[11px] ${TONE[c.outcome]}`}>{ICON[c.outcome]} <strong>{c.label}:</strong> {c.message}</p>
-          ))}
-          {preview.checks.every((c) => c.outcome === "pass") && <p className="text-[11px] text-emerald-700">✓ All checks passed.</p>}
-          {preview.orderPromos.length > 0 && <p className="text-[11px] text-emerald-700">🎁 Order promotion: {preview.orderPromos.join(", ")}</p>}
-        </div>
+        </Section>
       )}
 
       {orderType === "van_sale" && (
-        <div className="card space-y-2 p-3">
-          <p className="text-xs font-semibold text-slate-900">Customer acknowledgement</p>
+        <Section n={3} title="Customer acknowledgement">
           <input className="input" placeholder="Name of the person receiving the goods *" value={signatory} onChange={(e) => setSignatory(e.target.value)} />
-          <label className="flex items-center gap-2 text-xs"><input type="checkbox" checked={declined} onChange={(e) => setDeclined(e.target.checked)} /> Customer declined to sign</label>
+          <label className="flex min-h-[44px] items-center gap-2 text-sm"><input className="h-5 w-5" type="checkbox" checked={declined} onChange={(e) => setDeclined(e.target.checked)} /> Customer declined to sign</label>
           {declined ? <input className="input" placeholder="Reason for declining *" value={declinedReason} onChange={(e) => setDeclinedReason(e.target.value)} /> : <SignaturePad onChange={setSignature} />}
-        </div>
+        </Section>
       )}
-      {orderType === "pre_sales" && (
-        <details className="card p-3 text-xs">
-          <summary className="cursor-pointer text-slate-600">Customer signature (optional for pre-sales)</summary>
-          <div className="mt-2 space-y-2">
-            <input className="input" placeholder="Signatory name" value={signatory} onChange={(e) => setSignatory(e.target.value)} />
-            <SignaturePad onChange={setSignature} />
+
+      <Section n={4} title="Review & submit" id="review">
+        <input className="input" placeholder="Remarks (optional)" aria-label="Remarks" value={remarks} onChange={(e) => setRemarks(e.target.value)} />
+        <details className="rounded-lg border border-slate-200 text-sm">
+          <summary className="flex min-h-[44px] cursor-pointer items-center px-3 text-slate-700">Request a discount beyond the rules</summary>
+          <div className="grid grid-cols-[88px_1fr] gap-2 border-t border-slate-100 p-3">
+            <input className="input" type="number" inputMode="decimal" min={0} max={100} aria-label="Discount percent" value={override || ""} placeholder="%" onChange={(e) => setOverride(Number(e.target.value))} />
+            <input className="input" placeholder="Reason (required)" value={overrideReason} onChange={(e) => setOverrideReason(e.target.value)} />
           </div>
         </details>
-      )}
+        {orderType === "pre_sales" && (
+          <details className="rounded-lg border border-slate-200 text-sm">
+            <summary className="flex min-h-[44px] cursor-pointer items-center px-3 text-slate-700">Customer signature (optional for pre-sales)</summary>
+            <div className="space-y-2 border-t border-slate-100 p-3">
+              <input className="input" placeholder="Signatory name" value={signatory} onChange={(e) => setSignatory(e.target.value)} />
+              <SignaturePad onChange={setSignature} />
+            </div>
+          </details>
+        )}
 
-      {msg && <p className={`rounded-lg px-3 py-2 text-xs ${msg.ok ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>{msg.text}</p>}
+        {preview && (
+          <div className="space-y-1 rounded-lg bg-slate-50 p-3">
+            <p className="text-xs font-semibold text-slate-900">Checks {busy && <span className="font-normal text-slate-400">— updating…</span>}</p>
+            {preview.checks.filter((c) => c.outcome !== "pass").map((c) => (
+              <p key={c.id} className={`text-xs ${TONE[c.outcome]}`}>{ICON[c.outcome]} <strong>{c.label}:</strong> {c.message}</p>
+            ))}
+            {preview.checks.every((c) => c.outcome === "pass") && <p className="text-xs text-emerald-700">✓ All checks passed.</p>}
+            {preview.orderPromos.length > 0 && <p className="text-xs text-emerald-700">🎁 Order promotion: {preview.orderPromos.join(", ")}</p>}
+          </div>
+        )}
 
-      <div className="sticky bottom-0 -mx-4 border-t border-slate-200 bg-white px-4 py-3">
-        <div className="mb-2 flex justify-between text-sm">
-          <span className="text-slate-500">{items.length} line(s){preview && preview.discountTotal > 0 ? ` · saves ${peso(preview.discountTotal)}` : ""}</span>
-          <strong className="text-slate-900">{preview ? peso(preview.total) : "—"}</strong>
+        <dl className="space-y-1 rounded-lg border border-slate-200 p-3 text-sm">
+          <div className="flex justify-between"><dt className="text-slate-500">Lines</dt><dd className="font-medium text-slate-900">{items.length}</dd></div>
+          {preview && preview.discountTotal > 0 && <div className="flex justify-between"><dt className="text-slate-500">You save</dt><dd className="font-medium text-emerald-700">{peso(preview.discountTotal)}</dd></div>}
+          <div className="flex justify-between border-t border-slate-100 pt-1 text-base"><dt className="font-medium text-slate-900">Total</dt><dd className="font-semibold text-slate-900">{preview ? peso(preview.total) : "—"}</dd></div>
+        </dl>
+
+        <div ref={msgRef} aria-live="polite">
+          {msg && <p className={`rounded-lg px-3 py-3 text-sm ${msg.ok ? "bg-emerald-50 text-emerald-800" : "bg-rose-50 text-rose-800"}`}>{msg.text}</p>}
         </div>
-        <div className="flex gap-2">
-          <button type="button" className="btn-primary flex-1" disabled={pending || items.length === 0} onClick={() => send("submit")}>
-            {pending ? "Sending…" : orderType === "van_sale" ? "Complete van sale" : "Submit order"}
+        {hint && <p className="text-center text-xs text-slate-400">{hint}</p>}
+        <div className="grid gap-2">
+          <button type="button" className="btn-primary min-h-[48px] w-full text-base" disabled={pending || items.length === 0} onClick={() => send("submit")}>
+            {pending && sending === "submit" ? "Sending…" : orderType === "van_sale" ? "Complete van sale" : "Submit order"}
           </button>
-          <button type="button" className="btn-secondary" disabled={pending || items.length === 0} onClick={() => send("draft")}>Save draft</button>
+          <button type="button" className="btn-secondary min-h-[48px] w-full text-base" disabled={pending || items.length === 0} onClick={() => send("draft")}>{pending && sending === "draft" ? "Saving draft…" : "Save as draft"}</button>
         </div>
-      </div>
+      </Section>
     </div>
+  );
+}
+
+// One numbered block of the order form.
+function Section({ n, title, aside, id, children }: { n: number; title: string; aside?: React.ReactNode; id?: string; children: React.ReactNode }) {
+  return (
+    <section id={id} className="card scroll-mt-2 space-y-3 p-4">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="flex items-center gap-2 text-sm font-semibold text-slate-900">
+          <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs text-white">{n}</span>
+          {title}
+        </h2>
+        {aside}
+      </div>
+      {children}
+    </section>
   );
 }

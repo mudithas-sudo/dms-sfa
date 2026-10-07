@@ -29,7 +29,7 @@ export default async function NewFieldNotePage({ searchParams }: { searchParams:
       <Banner error={error} />
       <div className="flex gap-2 overflow-x-auto pb-1">
         {Object.entries(TYPE_LABELS).map(([value, label]) => (
-          <a key={value} href={`/sfa/field-notes/new?type=${value}${outletId ? `&outlet=${outletId}` : ""}`} className={`shrink-0 rounded-full px-3 py-1.5 text-xs font-medium ${type === value ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>
+          <a key={value} href={`/sfa/field-notes/new?type=${value}${outletId ? `&outlet=${outletId}` : ""}`} className={`inline-flex min-h-[40px] shrink-0 items-center rounded-full px-4 text-xs font-medium ${type === value ? "bg-blue-600 text-white" : "bg-slate-100 text-slate-600"}`}>
             {label}
           </a>
         ))}

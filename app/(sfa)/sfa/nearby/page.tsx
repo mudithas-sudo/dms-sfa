@@ -70,8 +70,8 @@ export default async function NearbyOutletsPage({ searchParams }: { searchParams
         <div className="flex items-end"><button className="btn-secondary w-full py-1.5 text-xs" type="submit">Apply</button></div>
       </form>
       <div className="flex gap-2 text-xs">
-        <Link href={`/sfa/nearby?${q({ view: "list" })}`} className={`rounded-full px-3 py-1 ${view === "list" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>List</Link>
-        <Link href={`/sfa/nearby?${q({ view: "map" })}`} className={`rounded-full px-3 py-1 ${view === "map" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>Map</Link>
+        <Link href={`/sfa/nearby?${q({ view: "list" })}`} className={`inline-flex min-h-[40px] items-center rounded-full px-4 ${view === "list" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>List</Link>
+        <Link href={`/sfa/nearby?${q({ view: "map" })}`} className={`inline-flex min-h-[40px] items-center rounded-full px-4 ${view === "map" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>Map</Link>
         <span className="ml-auto text-slate-400">{list.length} found</span>
       </div>
       {view === "map" && <OutletMap me={me} pins={list.map((o, i) => ({ id: o.id, name: o.name, lat: o.lat, lng: o.lng, state: visited.has(o.id) ? "visited" : "other", label: String(i + 1) }))} />}

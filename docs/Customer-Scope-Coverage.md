@@ -21,3 +21,9 @@ Azure / Azure SQL hosting, uptime, disaster recovery, backup and archive, 250 / 
 ## Head-office visibility (central administrator)
 
 The administrator's home page is the control tower: sales against target, receivables and overdue, collections, customer returns, central-warehouse returns, stock value and near-expiry, claims in progress, with a branch-by-branch comparison. A "Needs head-office attention" list puts approvals waiting for head office, credit holds, returns awaiting credit notes, central-warehouse return discrepancies, open claims, change requests, purchase-order exceptions, rejected e-invoices and integration errors first. Each branch opens into its own profile (ageing, largest overdue customers, returns, claims, pending approvals, near-expiry lots). Receivables and returns by branch remain under Reporting → Branch Network View.
+
+## Field app (mobile) and sample data
+
+- The field app fills the phone screen on a real device (phone frame only on larger screens), has a slim header, 44px touch targets and a bottom navigation bar. The order form is four short steps — customer, products, delivery, review & submit — and *Submit order* / *Save as draft* are the last items on the page, not fixed to the screen.
+- Head office has its own menu group: Head Office Overview, Receivables — All Branches, Returns — All Branches, Branch Network View.
+- Every feature has sample data: branch order flow (confirmed, allocated, picklists, picked, invoiced, out for delivery, delivered, short-delivered with undelivered balances, backorders, held orders), territories, pricing and standing-discount rules, credit/debit notes and write-off awaiting approval, tasks, leave and expenses, change requests, inter-branch transfers, stock adjustments and damage events, opening-balance batches, replenishment, van counts and reconciliations, claim lines, scheduled-report runs, export and duplicate logs, photos, merchandiser observations, import batches.

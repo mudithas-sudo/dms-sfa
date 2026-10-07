@@ -85,7 +85,7 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
                 </div>
                 {s.qtyGood > 0 && (
                   <details className="mt-1">
-                    <summary className="cursor-pointer text-xs text-rose-600">Mark damaged…</summary>
+                    <summary className="flex min-h-[44px] cursor-pointer items-center text-sm text-rose-600">Mark damaged…</summary>
                     <form action={markVanDamaged} className="mt-1 space-y-1.5">
                       <input type="hidden" name="stockBalanceId" value={s.id} />
                       <div className="flex gap-1.5">

@@ -8,7 +8,13 @@ import SfaSupervisorHome from "@/components/SfaSupervisorHome";
 import { daysFromNow, formatCurrency, formatDateTime } from "@/lib/format";
 import { dayStart } from "@/lib/van";
 import { scorecardFor } from "@/lib/scorecard";
-import { MapPin, ChevronRight, UserPlus, ClipboardList, CheckSquare, Calendar, Navigation, ClipboardEdit, Sun, Trophy, FileBarChart, RefreshCw, Undo2 } from "lucide-react";
+import { ShoppingCart, Wallet, MapPin, ChevronRight, UserPlus, ClipboardList, CheckSquare, Calendar, Navigation, ClipboardEdit, Sun, Trophy, FileBarChart, RefreshCw, Undo2 } from "lucide-react";
+
+const QUICK = [
+  { href: "/sfa/visit/new", label: "Start visit", icon: MapPin },
+  { href: "/sfa/order/new", label: "New order", icon: ShoppingCart },
+  { href: "/sfa/collections/new", label: "Collect", icon: Wallet },
+];
 
 const MORE_LINKS = [
   { href: "/sfa/attendance", label: "Attendance", icon: Sun },
@@ -76,6 +82,15 @@ export default async function SfaHomePage({ searchParams }: { searchParams: Prom
         </div>
       </div>
 
+      <nav aria-label="Quick actions" className="grid grid-cols-3 gap-2">
+        {QUICK.map((q) => (
+          <Link key={q.href} href={q.href} className="card flex min-h-[72px] flex-col items-center justify-center gap-1 p-2 text-center active:bg-slate-50">
+            <q.icon size={22} className="text-blue-600" />
+            <span className="text-xs font-medium text-slate-800">{q.label}</span>
+          </Link>
+        ))}
+      </nav>
+
       <div className="card p-4">
         <h2 className="mb-2 text-sm font-semibold text-slate-900">Field activity today</h2>
         <div className="grid grid-cols-4 gap-2 text-center">
@@ -111,14 +126,14 @@ export default async function SfaHomePage({ searchParams }: { searchParams: Prom
         <div className="card border-amber-200 bg-amber-50 p-4">
           <p className="text-xs font-medium text-amber-700">Visit in progress</p>
           <p className="text-sm text-amber-900">{activeVisit.outlet.name}</p>
-          <Link href="/sfa/visit/new" className="mt-2 inline-block text-xs font-medium text-amber-700 underline">Continue / check out</Link>
+          <Link href="/sfa/visit/new" className="mt-1 inline-flex min-h-[44px] items-center text-sm font-medium text-amber-700 underline">Continue / check out</Link>
         </div>
       )}
 
       <div className="card p-4">
         <div className="mb-3 flex items-center justify-between">
           <h2 className="text-sm font-semibold text-slate-900">Today&apos;s Beat Plan</h2>
-          <Link href="/sfa/route" className="text-xs font-medium text-blue-600">View all</Link>
+          <Link href="/sfa/route" className="inline-flex min-h-[44px] items-center px-1 text-sm font-medium text-blue-600">View all</Link>
         </div>
         <ul className="divide-y divide-slate-100">
           {stops.slice(0, 6).map((s) => {
@@ -146,9 +161,9 @@ export default async function SfaHomePage({ searchParams }: { searchParams: Prom
         <h2 className="mb-3 text-sm font-semibold text-slate-900">More</h2>
         <div className="grid grid-cols-4 gap-2">
           {MORE_LINKS.map((l) => (
-            <Link key={l.href} href={l.href} className="flex flex-col items-center gap-1 rounded-lg p-2 text-center hover:bg-slate-50">
+            <Link key={l.href} href={l.href} className="flex min-h-[64px] flex-col items-center justify-center gap-1 rounded-lg p-2 text-center active:bg-slate-100">
               <l.icon size={20} className="text-slate-500" />
-              <span className="text-[10px] leading-tight text-slate-600">{l.label}</span>
+              <span className="text-[11px] leading-tight text-slate-600">{l.label}</span>
             </Link>
           ))}
         </div>

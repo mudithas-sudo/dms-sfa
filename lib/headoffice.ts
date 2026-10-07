@@ -167,3 +167,53 @@ export async function branchDetail(branchId: string, days = 30) {
   }
   return { branch, card: cards[0], labels, top, market, central, van, claims, collections: [...modes.entries()], creditNotes, lots, reps, approvals, days };
 }
+
+// ---------------------------------------------------------------------------------------------------------------
+// Dedicated head-office screens: receivables from every branch, and every return record across branches.
+// ---------------------------------------------------------------------------------------------------------------
+
+export async function receivablesView(scope: Scope, branchId: string | undefined, days: number) {
+  const narrowed: Scope = branchId ? { ...scope, branchIds: [branchId] } : scope;
+  const base = await branchRollup(narrowed, days);
+  const ids = narrowed.branchIds;
+  const invoices = await prisma.invoice.findMany({
+    where: { ...(ids ? { branchId: { in: ids } } : {}), status: { in: ["unpaid", "partially_paid", "overdue"] } },
+    include: { arLedgerEntries: true, outlet: { select: { id: true, name: true, code: true, creditLimit: true, creditStatus: true, paymentTerms: true, branch: { select: { id: true, name: true } } } } },
+  });
+  const perOutlet = new Map<string, { outlet: (typeof invoices)[number]["outlet"]; balance: number; overdue: number; invoices: number; oldest: number; nextDue: Date | null }>();
+  const now = Date.now();
+  for (const i of invoices) {
+    const bal = invoiceBalance(i);
+    if (bal <= 0) continue;
+    const cur = perOutlet.get(i.outletId) ?? { outlet: i.outlet, balance: 0, overdue: 0, invoices: 0, oldest: 0, nextDue: null };
+    cur.balance += bal;
+    cur.invoices++;
+    const late = Math.floor((now - i.dueDate.getTime()) / DAY);
+    if (late > 0) {
+      cur.overdue += bal;
+      cur.oldest = Math.max(cur.oldest, late);
+    } else if (!cur.nextDue || i.dueDate < cur.nextDue) cur.nextDue = i.dueDate;
+    perOutlet.set(i.outletId, cur);
+  }
+  const customers = [...perOutlet.values()];
+  return {
+    ...base,
+    topBalances: [...customers].sort((a, b) => b.balance - a.balance).slice(0, 15),
+    overdueCustomers: customers.filter((c) => c.overdue > 0).sort((a, b) => b.overdue - a.overdue).slice(0, 25),
+    overLimit: customers.filter((c) => c.outlet.creditLimit > 0 && c.balance > c.outlet.creditLimit).sort((a, b) => b.balance - b.outlet.creditLimit - (a.balance - a.outlet.creditLimit)),
+    customerCount: customers.length,
+  };
+}
+
+export async function returnsView(scope: Scope, branchId: string | undefined, days: number) {
+  const narrowed: Scope = branchId ? { ...scope, branchIds: [branchId] } : scope;
+  const ids = narrowed.branchIds;
+  const from = new Date(Date.now() - days * DAY);
+  const [rollup, market, central, van] = await Promise.all([
+    branchRollup(narrowed, days),
+    prisma.marketReturn.findMany({ where: { createdAt: { gte: from }, outlet: ids ? { branchId: { in: ids } } : undefined }, include: { product: true, outlet: { include: { branch: true } }, creditNote: true }, orderBy: { createdAt: "desc" }, take: 300 }),
+    prisma.supplierReturn.findMany({ where: { createdAt: { gte: from }, warehouse: ids ? { branchId: { in: ids } } : undefined }, include: { product: true, warehouse: { include: { branch: true } } }, orderBy: { createdAt: "desc" }, take: 300 }),
+    prisma.vanReturn.findMany({ where: { createdAt: { gte: from }, van: ids ? { branchId: { in: ids } } : undefined }, include: { product: true, van: { include: { branch: true } } }, orderBy: { createdAt: "desc" }, take: 300 }),
+  ]);
+  return { rows: rollup.rows, market, central, van, days };
+}

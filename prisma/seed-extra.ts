@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { seedDemo } from "./seed-demo";
 
 // Additive demo data for the v2.0 proposal features. Idempotent: it fills new fields on
 // existing rows and adds records only when they are missing, so it can be run on top of the
@@ -415,6 +416,8 @@ export async function seedExtras(prisma: PrismaClient) {
       await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: doc.id, outletId: od.outletId, branchId: b.id, requestedBy: sup.id, amount: 3500, reason: `WO-00001 — write off for ${od.outlet.name}: customer closed the store · needs head office finance approval` } });
     }
   }
+
+  await seedDemo(prisma);
 
   console.log("v2.0 extras seeded.");
 }

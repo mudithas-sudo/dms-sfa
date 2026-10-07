@@ -53,12 +53,12 @@ export default async function RoutePlanPage({ searchParams }: { searchParams: Pr
       </div>
       <Banner error={error} notice={notice} />
       <div className="flex flex-wrap items-center gap-2 text-xs">
-        <Link href="/sfa/route?view=list" className={`rounded-full px-3 py-1 ${view === "list" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>List</Link>
-        <Link href="/sfa/route?view=map" className={`rounded-full px-3 py-1 ${view === "map" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>Map</Link>
+        <Link href="/sfa/route?view=list" className={`inline-flex min-h-[40px] items-center rounded-full px-4 ${view === "list" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>List</Link>
+        <Link href="/sfa/route?view=map" className={`inline-flex min-h-[40px] items-center rounded-full px-4 ${view === "map" ? "bg-blue-600 text-white" : "bg-slate-100"}`}>Map</Link>
         <span className="text-slate-300">|</span>
-        <Link href={`/sfa/route?view=${view}&sort=sequence`} className={sort === "sequence" ? "font-semibold text-blue-600" : "text-slate-500"}>Plan order</Link>
-        <Link href={`/sfa/route?view=${view}&sort=distance`} className={sort === "distance" ? "font-semibold text-blue-600" : "text-slate-500"}>Nearest first</Link>
-        <Link href="/sfa/nearby" className="ml-auto text-blue-600 underline">Add unplanned visit</Link>
+        <Link href={`/sfa/route?view=${view}&sort=sequence`} className={`inline-flex min-h-[40px] items-center ${sort === "sequence" ? "font-semibold text-blue-600" : "text-slate-500"}`}>Plan order</Link>
+        <Link href={`/sfa/route?view=${view}&sort=distance`} className={`inline-flex min-h-[40px] items-center ${sort === "distance" ? "font-semibold text-blue-600" : "text-slate-500"}`}>Nearest first</Link>
+        <Link href="/sfa/nearby" className="ml-auto inline-flex min-h-[40px] items-center text-blue-600 underline">Add unplanned visit</Link>
       </div>
       {sort === "distance" && !me && <p className="text-[11px] text-amber-700">Start your day to use your position for distance sorting.</p>}
 

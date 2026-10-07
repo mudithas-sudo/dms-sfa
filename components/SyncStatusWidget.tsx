@@ -39,7 +39,7 @@ export default function SyncStatusWidget({ lastSync }: { lastSync?: string | nul
           {pending > 0 && <span className="badge badge-amber">{pending} waiting to sync</span>}
           {failed > 0 && <span className="badge badge-red">{failed} failed</span>}
         </div>
-        <button type="button" onClick={() => setOffline(!offline)} className="text-xs font-medium text-blue-600 hover:underline">
+        <button type="button" onClick={() => setOffline(!offline)} className="inline-flex min-h-[44px] items-center px-1 text-xs font-medium text-blue-600 hover:underline">
           {offline ? "Go online" : "Work offline (demo)"}
         </button>
       </div>

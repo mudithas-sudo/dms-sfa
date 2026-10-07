@@ -3,7 +3,10 @@ import { getSession } from "@/lib/session";
 import type { NavItem } from "@/components/Sidebar";
 
 const navItems: NavItem[] = [
-  { href: "/admin", label: "Overview", icon: "Building2" },
+  { href: "/admin", label: "Head Office Overview", icon: "Building2", section: "Head office" },
+  { href: "/admin/receivables", label: "Receivables — All Branches", icon: "Wallet" },
+  { href: "/admin/returns", label: "Returns — All Branches", icon: "Undo2" },
+  { href: "/admin/network", label: "Branch Network View", icon: "Building2" },
   { href: "/admin/branches", label: "Branches", icon: "Building2", section: "Master data" },
   { href: "/admin/outlets", label: "Outlets", icon: "Store" },
   { href: "/admin/outlets/onboarding", label: "Onboarding Queue", icon: "UserCheck" },
@@ -18,8 +21,7 @@ const navItems: NavItem[] = [
   { href: "/admin/pricing", label: "Pricing Engine", icon: "Tags", section: "Commercial" },
   { href: "/admin/customer-discounts", label: "Customer Discounts", icon: "Percent" },
   { href: "/admin/promotions", label: "Promotions", icon: "Megaphone" },
-  { href: "/admin/network", label: "Branch Network View", icon: "Building2", section: "Reporting" },
-  { href: "/admin/dashboards", label: "Dashboards", icon: "BarChart3" },
+  { href: "/admin/dashboards", label: "Dashboards", icon: "BarChart3", section: "Reporting" },
   { href: "/admin/reports", label: "Report Catalog", icon: "FileBarChart" },
   { href: "/admin/scheduled-reports", label: "Scheduled Reports", icon: "CalendarClock" },
   { href: "/admin/users", label: "Users & Roles", icon: "UserCog", section: "Governance" },
