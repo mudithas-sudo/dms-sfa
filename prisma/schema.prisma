@@ -1130,6 +1130,8 @@ model ScheduledReport {
   format             String    @default("excel") // excel | pdf | both
   filters            String?
   frequency          String?   // daily | weekly | monthly
+  ownerId            String?
+  relativeDates      String?   // previous_day | previous_week | previous_month
   lastRunAt          DateTime?
   lastRunStatus      String?
   createdBy          String
@@ -1146,6 +1148,8 @@ model ScheduledReportRun {
   status     String          // success | failed
   rowCount   Int?
   error      String?
+  output     String?   // JSON snapshot (first rows) shown in the report inbox
+  trigger    String    @default("schedule") // schedule | manual | retry
 }
 
 // ---------------------------------------------------------------------------

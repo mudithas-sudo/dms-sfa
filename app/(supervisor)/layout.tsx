@@ -16,6 +16,8 @@ const navItems: NavItem[] = [
   { href: "/supervisor/team-dashboard", label: "Team Dashboard", icon: "Users" },
   { href: "/supervisor/coverage", label: "Coverage Monitoring", icon: "MapPinned" },
   { href: "/supervisor/scorecards", label: "Rep Scorecards", icon: "BarChart3" },
+  { href: "/supervisor/dashboards", label: "Dashboards", icon: "BarChart3" },
+  { href: "/supervisor/reports", label: "Reports", icon: "FileBarChart" },
 ];
 
 export default async function SupervisorLayout({ children }: { children: React.ReactNode }) {

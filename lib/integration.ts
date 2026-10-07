@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 // an administrator switches on "simulate outage" the next N messages fail and wait in the
 // error queue until corrected and resent — exactly how a real interface failure would behave.
 
-export type Connector = "erp" | "sfa" | "trade_promotion" | "merchandising" | "bi";
+export type Connector = "erp" | "sfa" | "trade_promotion" | "merchandising" | "bi" | "email";
 
 export const CONNECTOR_LABEL: Record<Connector, string> = {
   erp: "ERP",
@@ -12,6 +12,7 @@ export const CONNECTOR_LABEL: Record<Connector, string> = {
   trade_promotion: "Trade promotion application",
   merchandising: "Merchandising application",
   bi: "Business intelligence feed",
+  email: "E-mail / report inbox",
 };
 
 export async function sendMessage(input: {

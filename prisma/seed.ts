@@ -1266,7 +1266,7 @@ async function main() {
   await prisma.scheduledReport.create({
     data: {
       name: "Weekly Sales Summary",
-      reportType: "sales_summary",
+      reportType: "sales-by-dimension", frequency: "weekly", relativeDates: "previous_week", ownerId: admin.id,
       scheduleDescription: "Every Monday 8:00 AM",
       recipientEmails: "management@companyfnb.example, admin@companyfnb.example",
       status: "active",
@@ -1277,7 +1277,7 @@ async function main() {
   await prisma.scheduledReport.create({
     data: {
       name: "Monthly AR Aging",
-      reportType: "ar_aging",
+      reportType: "receivables-ageing", frequency: "monthly", relativeDates: "previous_month", ownerId: admin.id,
       scheduleDescription: "1st of every month, 7:00 AM",
       recipientEmails: "finance@companyfnb.example",
       status: "active",
@@ -1288,7 +1288,7 @@ async function main() {
   await prisma.scheduledReport.create({
     data: {
       name: "Inventory Valuation",
-      reportType: "inventory_valuation",
+      reportType: "stock-on-hand", frequency: "daily", ownerId: admin.id,
       scheduleDescription: "Every Friday 6:00 PM",
       recipientEmails: "ops@companyfnb.example",
       status: "inactive",

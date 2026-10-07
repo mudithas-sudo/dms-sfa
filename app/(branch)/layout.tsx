@@ -19,6 +19,8 @@ const navItems: NavItem[] = [
   { href: "/branch/supplier-returns", label: "Returns to Central Warehouse", icon: "Undo2" },
   { href: "/branch/replenishment-requests", label: "Van Stock Requests", icon: "Inbox" },
   { href: "/branch/eod-reconciliation", label: "End-of-Day Reconciliation", icon: "CalendarCheck" },
+  { href: "/branch/dashboards", label: "Dashboards", icon: "BarChart3" },
+  { href: "/branch/reports", label: "Reports", icon: "FileBarChart" },
 ];
 
 export default async function BranchLayout({ children }: { children: React.ReactNode }) {

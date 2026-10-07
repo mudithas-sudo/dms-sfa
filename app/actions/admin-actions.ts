@@ -873,19 +873,3 @@ export async function updateVan(formData: FormData) {
 // (Replaced in later steps: promotions and scheduled reports have dedicated modules.)
 // ---------------------------------------------------------------------------
 
-export async function createScheduledReport(formData: FormData) {
-  const name = str(formData, "name");
-  const scheduleDescription = str(formData, "scheduleDescription");
-  if (!name || !scheduleDescription) return;
-  const creator = await actorName();
-  const report = await prisma.scheduledReport.create({
-    data: { name, reportType: str(formData, "reportType"), scheduleDescription, recipientEmails: str(formData, "recipientEmails"), createdBy: creator },
-  });
-  await logAudit("ScheduledReport", report.id, "create", `Created scheduled report "${name}"`, { after: report });
-  revalidatePath("/admin/scheduled-reports");
-}
-
-export async function toggleScheduledReport(formData: FormData) {
-  await prisma.scheduledReport.update({ where: { id: str(formData, "id") }, data: { status: str(formData, "nextStatus") } });
-  revalidatePath("/admin/scheduled-reports");
-}

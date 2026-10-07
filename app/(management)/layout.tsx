@@ -4,6 +4,8 @@ import type { NavItem } from "@/components/Sidebar";
 
 const navItems: NavItem[] = [
   { href: "/management", label: "Cross-Branch Dashboard", icon: "BarChart3" },
+  { href: "/management/dashboards", label: "Dashboards", icon: "LayoutDashboard" },
+  { href: "/management/reports", label: "Report Catalog", icon: "FileBarChart" },
 ];
 
 export default async function ManagementLayout({ children }: { children: React.ReactNode }) {

@@ -27,6 +27,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "adjust.supervisorMaxValue", group: "Inventory", label: "Stock adjustment: warehouse supervisor limit (₱)", type: "number", default: "5000" },
   { key: "adjust.managerMaxValue", group: "Inventory", label: "Stock adjustment: branch manager limit (₱)", type: "number", default: "25000", help: "Above this, a head office inventory controller must approve." },
   { key: "transfer.managerMaxValue", group: "Inventory", label: "Stock transfer: branch manager limit (₱)", type: "number", default: "50000" },
+  { key: "dashboard.refreshMinutes", group: "Governance", label: "Dashboard auto-refresh interval (minutes, 0 = off)", type: "number", default: "5" },
   // Sales
   { key: "orders.shortagePolicy", group: "Sales & credit", label: "Stock shortage handling", type: "select", options: ["hold", "partial_backorder"], default: "hold", help: "Hold the whole order, or allocate what is available and keep the balance as backorder." },
   { key: "orders.reservationHours", group: "Sales & credit", label: "Release unconfirmed reservations after (hours)", type: "number", default: "48" },
