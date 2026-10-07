@@ -262,6 +262,48 @@ export async function seedExtras(prisma: PrismaClient) {
       });
     }
   }
+  // ---- Promotions: ownership, new promotion types in different lifecycle states
+  const admin = await prisma.user.findFirst({ where: { role: "admin" } });
+  await prisma.promotion.updateMany({ where: { createdBy: null }, data: { createdBy: admin?.name ?? "Administrator", approvedBy: admin?.name ?? "Administrator" } });
+  if ((await prisma.promotion.count({ where: { type: { in: ["bundle", "qty_slab", "value_based"] } } })) === 0) {
+    const byName = async (n: string) => (await prisma.product.findFirst({ where: { name: { startsWith: n } } }))?.id;
+    const crackers = await byName("Butter Crackers");
+    const choco = await byName("Choco Sandwich");
+    const soap = await byName("Antibacterial");
+    const chips = await byName("Golden Crunch Chips");
+    const start = new Date();
+    start.setDate(start.getDate() - 10);
+    const end = new Date();
+    end.setDate(end.getDate() + 50);
+    const base = { startDate: start, endDate: end, createdBy: admin?.name ?? "Administrator", approvedBy: admin?.name ?? "Administrator", eligibilityRule: "All outlets", discountValue: 0 };
+    if (crackers && choco) {
+      await prisma.promotion.create({ data: { ...base, name: "Snack Duo Bundle", code: "PR-BUN-01", type: "bundle", status: "active", config: JSON.stringify({ items: [{ productId: crackers, qty: 2 }, { productId: choco, qty: 2 }], bundlePrice: 950, maxBundles: 10 }), priority: 5, stacking: "none", budget: 150000 } });
+    }
+    if (soap) {
+      await prisma.promotion.create({ data: { ...base, name: "Soap Volume Slabs", code: "PR-SLB-01", type: "qty_slab", status: "active", productId: soap, config: JSON.stringify({ slabs: [{ minQty: 5, discountPct: 3 }, { minQty: 10, discountPct: 6, freeQty: 1 }] }), maxDiscountCap: 1500, stacking: "with_fixed_discount" } });
+    }
+    await prisma.promotion.create({ data: { ...base, name: "Big Basket 2% Off", code: "PR-VAL-01", type: "value_based", status: "approved", minOrderValue: 30000, config: JSON.stringify({ valueOffPct: 2 }), maxDiscountCap: 2500, stacking: "with_promotions", daysOfWeek: "monday,tuesday,wednesday,thursday,friday" } });
+    if (chips) {
+      await prisma.promotion.create({ data: { ...base, name: "Chips Weekend Free Goods (draft)", type: "free_good", status: "draft", productId: chips, minQty: 6, freeQty: 1, approvedBy: null, config: JSON.stringify({ repeat: true }) } });
+    }
+  }
+
+  // ---- Claims: bring the sample claims onto the new lifecycle and amounts
+  await prisma.claim.updateMany({ where: { status: "reviewed" }, data: { status: "under_review" } });
+  const claims = await prisma.claim.findMany({ where: { eligibleAmount: null } });
+  for (const c of claims) {
+    await prisma.claim.update({ where: { id: c.id }, data: { eligibleAmount: c.amount, documents: JSON.stringify(["Signed delivery receipts", "Promotion mechanics sheet"]), ...(c.status === "settled" ? { settlementReference: "CM-2026-0114" } : {}) } });
+  }
+
+  // ---- A pending customer change request to review
+  if ((await prisma.customerChangeRequest.count()) === 0) {
+    const rep = await prisma.user.findFirst({ where: { role: "sales_rep" }, orderBy: { name: "asc" } });
+    const outlet = rep ? await prisma.outlet.findFirst({ where: { branchId: rep.branchId ?? undefined, status: "active" }, orderBy: { name: "asc" } }) : null;
+    if (rep && outlet) {
+      await prisma.customerChangeRequest.create({ data: { outletId: outlet.id, requestedBy: rep.name, field: "phone", currentValue: outlet.phone, proposedValue: "0917-555-0142", reason: "Owner got a new mobile number" } });
+    }
+  }
+
   console.log("v2.0 extras seeded.");
 }
 

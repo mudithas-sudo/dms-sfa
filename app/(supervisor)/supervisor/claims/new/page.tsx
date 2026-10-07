@@ -87,7 +87,7 @@ export default async function NewClaimPage({ searchParams }: { searchParams: Pro
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
               <label className="label" htmlFor="amount">Amount to claim (₱)</label>
-              <input className="input" id="amount" name="amount" type="number" step="0.01" min={0} defaultValue={total} />
+              <input className="input" id="amount" name="amount" type="number" step="0.01" min={0} placeholder={`Leave empty to claim the eligible ${formatCurrency(total)} of the selected orders`} />
               <p className="mt-1 text-[11px] text-slate-400">More than the eligible amount (beyond {num(s, "claim.tolerancePct")}%) needs a justification and an approved exception.</p>
             </div>
             <div>

@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { href: "/admin/scheduled-reports", label: "Scheduled Reports", icon: "CalendarClock" },
   { href: "/admin/users", label: "Users & Roles", icon: "UserCog", section: "Governance" },
   { href: "/admin/permissions", label: "Permissions (RBAC)", icon: "Lock" },
+  { href: "/admin/approval-authority", label: "Approval Authority", icon: "ShieldCheck" },
   { href: "/admin/settings", label: "Platform Configuration", icon: "Settings" },
   { href: "/admin/security", label: "Identity & Audit Integrity", icon: "KeyRound" },
   { href: "/admin/audit-log", label: "Audit Log", icon: "ScrollText" },

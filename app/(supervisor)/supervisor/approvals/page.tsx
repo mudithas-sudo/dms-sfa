@@ -1,9 +1,12 @@
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/StatusBadge";
 import { formatCurrency, formatDateTime } from "@/lib/format";
-import { decideApproval } from "@/app/actions/supervisor-actions";
+import { decideApproval, escalateApproval } from "@/app/actions/supervisor-actions";
+import Banner from "@/components/Banner";
+import { typeLabel } from "@/lib/approval-types";
 
-export default async function ApprovalsPage() {
+export default async function ApprovalsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
+  const { error, notice } = await searchParams;
   const requests = await prisma.approvalRequest.findMany({
     orderBy: { createdAt: "desc" },
     include: { salesOrder: { include: { outlet: true } }, arLedgerEntry: { include: { outlet: true } } },
@@ -14,6 +17,7 @@ export default async function ApprovalsPage() {
 
   return (
     <div className="space-y-6">
+      <Banner error={error} notice={notice} />
       <div>
         <h2 className="mb-3 text-base font-semibold text-slate-900">Pending Approvals</h2>
         <div className="space-y-3">
@@ -21,7 +25,7 @@ export default async function ApprovalsPage() {
             <div key={r.id} className="card p-5">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="text-sm font-semibold text-slate-900 capitalize">{r.type.replace(/_/g, " ")}</p>
+                  <p className="text-sm font-semibold text-slate-900">{typeLabel(r.type)}{r.level >= 2 && <span className="ml-2 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] font-semibold uppercase text-amber-800">head office</span>}</p>
                   <p className="text-xs text-slate-500">
                     Requested by {r.requestedBy} · {formatDateTime(r.createdAt)}
                     {r.salesOrder && ` · Order ${r.salesOrder.orderNumber} (${r.salesOrder.outlet.name})`}
@@ -38,6 +42,13 @@ export default async function ApprovalsPage() {
                 <button type="submit" name="decision" value="approved" className="btn-primary">Approve</button>
                 <button type="submit" name="decision" value="rejected" className="btn-danger">Reject</button>
               </form>
+              {r.level < 2 && (
+                <form action={escalateApproval} className="mt-2 flex items-center gap-2">
+                  <input type="hidden" name="id" value={r.id} />
+                  <input className="input max-w-xs flex-1 py-1 text-xs" name="note" placeholder="Why escalate? (optional)" />
+                  <button type="submit" className="text-xs text-blue-600 hover:underline">Escalate to head office</button>
+                </form>
+              )}
             </div>
           ))}
           {pending.length === 0 && <p className="text-sm text-slate-400">No pending approvals.</p>}
@@ -61,7 +72,7 @@ export default async function ApprovalsPage() {
             <tbody className="divide-y divide-slate-100">
               {decided.map((r) => (
                 <tr key={r.id}>
-                  <td className="td capitalize">{r.type.replace(/_/g, " ")}</td>
+                  <td className="td">{typeLabel(r.type)}</td>
                   <td className="td">{r.requestedBy}</td>
                   <td className="td">{formatCurrency(r.amount)}</td>
                   <td className="td">{r.decidedBy ?? "—"}</td>

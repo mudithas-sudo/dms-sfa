@@ -6,6 +6,8 @@ import { processMarketReturn } from "@/app/actions/supervisor-actions";
 
 export default async function MarketReturnsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
   const { error, notice } = await searchParams;
+  const exceptions = await prisma.approvalRequest.findMany({ where: { type: "return_outside_policy" }, select: { refId: true, status: true } });
+  const exStatus = (id: string) => exceptions.find((e) => e.refId === id)?.status;
   const returns = await prisma.marketReturn.findMany({
     orderBy: { createdAt: "desc" },
     include: { outlet: true, product: true, creditNote: true },
@@ -39,8 +41,8 @@ export default async function MarketReturnsPage({ searchParams }: { searchParams
                 <td className="td text-xs">{formatDate(r.createdAt)} by {r.capturedBy}</td>
                 <td className="td"><StatusBadge status={r.status} /></td>
                 <td className="td text-right">
-                  {r.status === "pending" && r.outsidePolicy ? (
-                    <span className="text-xs text-amber-700">Outside policy — approve in Approvals first</span>
+                  {r.status === "pending" && r.outsidePolicy && exStatus(r.id) !== "approved" ? (
+                    <span className="text-xs text-amber-700">{exStatus(r.id) === "rejected" ? "Exception rejected" : "Outside policy — approve in Approvals first"}</span>
                   ) : r.status === "pending" ? (
                     <form action={processMarketReturn} className="flex items-center justify-end gap-2">
                       <input type="hidden" name="marketReturnId" value={r.id} />

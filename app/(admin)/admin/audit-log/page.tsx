@@ -62,6 +62,8 @@ export default async function AuditLogPage({
         <input className="input max-w-[160px]" type="date" name="from" defaultValue={from ?? ""} />
         <input className="input max-w-[160px]" type="date" name="to" defaultValue={to ?? ""} />
         <button type="submit" className="btn-secondary">Filter</button>
+        <a className="btn-secondary" href={`/api/audit/export?format=csv&entity=${entity ?? ""}&userId=${userId ?? ""}&from=${from ?? ""}&to=${to ?? ""}`}>Export CSV</a>
+        <a className="btn-secondary" href={`/api/audit/export?format=excel&entity=${entity ?? ""}&userId=${userId ?? ""}&from=${from ?? ""}&to=${to ?? ""}`}>Export Excel</a>
       </form>
 
       <div className="card overflow-x-auto">

@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import Banner from "@/components/Banner";
 import SyncStatusWidget from "@/components/SyncStatusWidget";
+import SfaSupervisorHome from "@/components/SfaSupervisorHome";
 import { daysFromNow, formatCurrency, formatDateTime } from "@/lib/format";
 import { dayStart } from "@/lib/van";
 import { scorecardFor } from "@/lib/scorecard";
@@ -24,9 +25,18 @@ const MORE_LINKS = [
 ];
 
 export default async function SfaHomePage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
-  const { userId, branchId } = await getSession();
+  const { userId, branchId, role } = await getSession();
   if (!userId || !branchId) return <p className="text-sm text-slate-500">No rep selected.</p>;
   const { error, notice } = await searchParams;
+  if (role === "supervisor" || role === "admin") {
+    const me = await prisma.user.findUnique({ where: { id: userId } });
+    return (
+      <div className="space-y-3">
+        <Banner error={error} notice={notice} />
+        <SfaSupervisorHome branchId={branchId} name={me?.name ?? "Supervisor"} />
+      </div>
+    );
+  }
 
   const start = dayStart();
   const month = new Date().toISOString().slice(0, 7);

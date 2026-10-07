@@ -86,6 +86,8 @@ export async function decideApproval(formData: FormData) {
 
   // Authority levels: bigger amounts escalate to head office.
   const s = await getAllSettings();
+  const hoTypes = ((await prisma.appSetting.findUnique({ where: { key: "approval.headOfficeTypes" } }))?.value ?? "").split(",").filter(Boolean);
+  if (role !== "admin" && (hoTypes.includes(request.type) || request.level >= 2)) fail(back, request.level >= 2 ? "This request was escalated to head office — an administrator must decide it." : "This kind of request is decided by head office only.");
   if ((request.type === "order_void" || request.type === "order_cancel") && request.amount > num(s, "cancel.supervisorMaxValue") && role !== "admin")
     fail(back, `This ${request.type === "order_void" ? "void" : "cancellation"} exceeds the supervisor's authority (₱${num(s, "cancel.supervisorMaxValue").toLocaleString()}) — head office must approve it.`);
   if (request.type === "discount_override" && request.amount > num(s, "discount.supervisorMaxPct") && role !== "admin")
@@ -291,4 +293,20 @@ export async function processMarketReturn(formData: FormData) {
   await prisma.marketReturn.update({ where: { id: marketReturnId }, data: { status: "processed", creditNoteId: note.id } });
   revalidatePath("/supervisor/market-returns");
   redirect(`/supervisor/market-returns?notice=${encodeURIComponent(needsApproval ? `Credit note ${note.noteNumber} is above your limit and has gone to head office for approval.` : `Credit note ${note.noteNumber} issued.`)}`);
+}
+
+// A supervisor who cannot or should not decide a request passes it up to head office.
+export async function escalateApproval(formData: FormData) {
+  await assertCan("sales", "approve");
+  const id = String(formData.get("id"));
+  const note = String(formData.get("note") ?? "").trim();
+  const req = await prisma.approvalRequest.findUniqueOrThrow({ where: { id } });
+  if (req.status !== "pending") redirect("/supervisor/approvals");
+  if (req.level >= 2) redirect(`/supervisor/approvals?error=${encodeURIComponent("Already escalated to head office.")}`);
+  const by = await currentUserName("Supervisor");
+  await prisma.approvalRequest.update({ where: { id }, data: { level: 2, reason: `${req.reason} — escalated by ${by}${note ? `: ${note}` : ""}` } });
+  await logAudit("ApprovalRequest", id, "escalate", `Escalated ${req.type.replace(/_/g, " ")} to head office${note ? ` — ${note}` : ""}`);
+  await notify({ role: "admin", title: "Escalated approval", body: `${req.type.replace(/_/g, " ")} — ${req.reason.slice(0, 100)}`, link: "/supervisor/approvals", kind: "approval" });
+  revalidatePath("/supervisor/approvals");
+  redirect(`/supervisor/approvals?notice=${encodeURIComponent("Escalated to head office.")}`);
 }

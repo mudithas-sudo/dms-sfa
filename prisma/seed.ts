@@ -50,6 +50,14 @@ async function main() {
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.photo.deleteMany();
+  await prisma.orderAllocation.deleteMany();
+  await prisma.stockMovement.deleteMany();
+  await prisma.vanReconciliationLine.deleteMany();
+  await prisma.vanReconciliation.deleteMany();
+  await prisma.vanStockCountLine.deleteMany();
+  await prisma.vanStockCount.deleteMany();
+  await prisma.openingBalanceLine.deleteMany();
+  await prisma.openingBalanceBatch.deleteMany();
   await prisma.target.deleteMany();
   await prisma.exportLog.deleteMany();
   await prisma.rolePermission.deleteMany();
@@ -60,6 +68,7 @@ async function main() {
   await prisma.biExtract.deleteMany();
   await prisma.appSetting.deleteMany();
   await prisma.financialDocument.deleteMany();
+  await prisma.customerChangeRequest.deleteMany();
   await prisma.scheduledReportRun.deleteMany();
   await prisma.claimLine.deleteMany();
   await prisma.undeliveredBalance.deleteMany();
