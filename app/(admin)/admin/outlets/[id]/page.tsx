@@ -5,6 +5,7 @@ import { updateOutlet, setOutletBlocked } from "@/app/actions/admin-actions";
 import Banner from "@/components/Banner";
 import StatusBadge from "@/components/StatusBadge";
 import OutletForm from "@/components/admin/OutletForm";
+import { paymentTermOptions } from "@/lib/reference";
 import { channelOptions } from "@/lib/masterdata";
 import { formatDateTime } from "@/lib/format";
 
@@ -50,7 +51,7 @@ export default async function EditOutletPage({
             <p className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-xs text-amber-800">Returned for correction: {outlet.onboardingReason}</p>
           )}
         </div>
-        <OutletForm action={updateOutlet} outlet={outlet} branches={branches} channels={channels} routes={routes} submitLabel="Save changes" />
+        <OutletForm terms={await paymentTermOptions()} action={updateOutlet} outlet={outlet} branches={branches} channels={channels} routes={routes} submitLabel="Save changes" />
         {outlet.status !== "blocked" ? (
           <form action={setOutletBlocked} className="mt-5 flex flex-wrap items-center gap-2 border-t border-slate-100 pt-4">
             <input type="hidden" name="id" value={outlet.id} />

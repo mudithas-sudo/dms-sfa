@@ -7,6 +7,7 @@ import PaymentForm from "@/components/PaymentForm";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { invoiceBalance, outletBalance, isEffectivePayment, CREDIT_STATUS_LABEL } from "@/lib/finance";
 import { requestArReversal } from "@/app/actions/supervisor-actions";
+import { bankOptions } from "@/lib/reference";
 import { clearCheque, bounceCheque, applyUnapplied } from "@/app/actions/finance-actions";
 
 export default async function PaymentReconciliationPage({ searchParams }: { searchParams: Promise<{ outlet?: string; error?: string; notice?: string }> }) {
@@ -68,7 +69,7 @@ export default async function PaymentReconciliationPage({ searchParams }: { sear
       {selected && (
         <div className="card p-6">
           <h3 className="mb-3 text-sm font-semibold text-slate-900">Record a payment</h3>
-          <PaymentForm outletId={selected.id} invoices={rows} today={now.toISOString().slice(0, 10)} />
+          <PaymentForm banks={await bankOptions()} outletId={selected.id} invoices={rows} today={now.toISOString().slice(0, 10)} />
         </div>
       )}
 

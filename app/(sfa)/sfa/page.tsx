@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import Banner from "@/components/Banner";
@@ -28,6 +29,7 @@ export default async function SfaHomePage({ searchParams }: { searchParams: Prom
   const { userId, branchId, role } = await getSession();
   if (!userId || !branchId) return <p className="text-sm text-slate-500">No rep selected.</p>;
   const { error, notice } = await searchParams;
+  if (role === "key_account") redirect("/sfa/key-accounts");
   if (role === "supervisor" || role === "admin") {
     const me = await prisma.user.findUnique({ where: { id: userId } });
     return (

@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { invoiceBalance } from "@/lib/finance";
+import { transmitInvoice } from "@/app/actions/einvoice-actions";
 import StatusBadge from "@/components/StatusBadge";
 import PrintButton from "@/components/PrintButton";
 import { formatCurrency, formatDate, vatBreakdown } from "@/lib/format";
@@ -20,7 +21,7 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
   });
   if (!invoice) notFound();
 
-  const { vatableSales, vatAmount, total } = vatBreakdown(invoice.amount);
+  const { vatableSales, vatAmount, total } = vatBreakdown(invoice.amount, invoice.taxAmount > 0 && invoice.amount > 0 ? invoice.taxAmount / (invoice.amount - invoice.taxAmount) : 0.12);
   const paid = Math.round((invoice.amount - invoiceBalance(invoice)) * 100) / 100;
 
   return (
@@ -32,6 +33,21 @@ export default async function InvoiceDetailPage({ params }: { params: Promise<{ 
           <span className="text-slate-900">{invoice.invoiceNumber}</span>
         </div>
         <PrintButton />
+      </div>
+
+      <div className="no-print card flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+        <div>
+          <p className="font-medium text-slate-900">E-invoice: <span className="capitalize">{invoice.einvoiceStatus.replace("_", " ")}</span>{invoice.einvoiceRef ? ` · ${invoice.einvoiceRef}` : ""}</p>
+          {invoice.einvoiceError && <p className="text-xs text-rose-600">{invoice.einvoiceError}</p>}
+          {invoice.outlet.tin ? <p className="text-xs text-slate-500">Buyer TIN {invoice.outlet.tin}</p> : <p className="text-xs text-amber-700">The customer has no TIN on record.</p>}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <a className="btn-secondary" href={`/api/invoices/${invoice.id}/einvoice?format=json`}>E-invoice JSON</a>
+          <a className="btn-secondary" href={`/api/invoices/${invoice.id}/einvoice?format=xml`}>E-invoice XML</a>
+          {invoice.einvoiceStatus !== "accepted" && invoice.status !== "voided" && (
+            <form action={transmitInvoice}><input type="hidden" name="id" value={invoice.id} /><input type="hidden" name="back" value={`/supervisor/invoices/${invoice.id}`} /><button className="btn-primary" type="submit">{invoice.einvoiceStatus === "rejected" ? "Resend" : "Transmit"} to the e-invoicing platform</button></form>
+          )}
+        </div>
       </div>
 
       <div className="card space-y-6 p-8">

@@ -13,6 +13,7 @@ import { completeHeldOrder, performOrderCancellation } from "@/app/actions/sales
 
 import { addToLot } from "@/lib/stock";
 import { completeVanSale } from "@/lib/vansale";
+import { sendMessage } from "@/lib/integration";
 import { applyChequeBounce, createCreditNote, invoiceBalance, outletBalance, postCreditNote, postFinancialDocument, recomputeInvoiceStatus } from "@/lib/finance";
 
 async function currentUserName(fallback: string) {
@@ -291,6 +292,10 @@ export async function processMarketReturn(formData: FormData) {
   const amount = Math.min(full, Number.isFinite(asked) && asked > 0 ? asked : full);
   const { note, needsApproval } = await createCreditNote({ outletId: marketReturn.outletId, invoiceId: marketReturn.invoiceId, amount, reason: `Market return: ${marketReturn.reason.replace(/_/g, " ")}${marketReturn.outsidePolicy ? " (outside return policy)" : ""}` });
   await prisma.marketReturn.update({ where: { id: marketReturnId }, data: { status: "processed", creditNoteId: note.id } });
+  if (!needsApproval) {
+    // an approved return is told to the merchandising application straight away
+    await sendMessage({ connector: "merchandising", direction: "outbound", docType: "approved_returns", reference: note.noteNumber, payload: [{ creditNote: note.noteNumber, sku: marketReturn.product.sku, qty: marketReturn.qty, reason: marketReturn.reason }] });
+  }
   revalidatePath("/supervisor/market-returns");
   redirect(`/supervisor/market-returns?notice=${encodeURIComponent(needsApproval ? `Credit note ${note.noteNumber} is above your limit and has gone to head office for approval.` : `Credit note ${note.noteNumber} issued.`)}`);
 }

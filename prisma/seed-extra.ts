@@ -304,6 +304,50 @@ export async function seedExtras(prisma: PrismaClient) {
     }
   }
 
+  // ---- Financial reference data (payment terms, banks, tax rates)
+  if ((await prisma.referenceItem.count()) === 0) {
+    const terms: [string, string, number][] = [["cash", "Cash on delivery", 0], ["credit_15", "Credit — 15 days", 15], ["credit_30", "Credit — 30 days", 30], ["credit_45", "Credit — 45 days", 45], ["credit_60", "Credit — 60 days (key accounts)", 60]];
+    for (const [code, label, value] of terms) await prisma.referenceItem.create({ data: { kind: "payment_term", code, label, value } });
+    for (const b of ["BDO Unibank", "BPI", "Metrobank", "Land Bank of the Philippines", "Security Bank", "PNB", "UnionBank", "China Bank"]) await prisma.referenceItem.create({ data: { kind: "bank", code: b.toLowerCase().replace(/[^a-z0-9]+/g, "_").slice(0, 40), label: b } });
+    await prisma.referenceItem.create({ data: { kind: "tax_rate", code: "vat12", label: "Value-added tax", value: 12, isDefault: true } });
+    await prisma.referenceItem.create({ data: { kind: "tax_rate", code: "vat0", label: "Zero-rated sales", value: 0 } });
+  }
+
+  // ---- Customer TINs (a few left blank so the e-invoice rejection path can be shown)
+  const noTin = await prisma.outlet.findMany({ where: { tin: null, status: "active" }, orderBy: { code: "asc" } });
+  for (let i = 0; i < noTin.length; i++) {
+    if (i % 7 === 6) continue;
+    const n = 100000000 + ((i + 1) * 7919317) % 899999999;
+    await prisma.outlet.update({ where: { id: noTin[i].id }, data: { tin: `${String(n).slice(0, 3)}-${String(n).slice(3, 6)}-${String(n).slice(6, 9)}-000` } });
+  }
+
+  // ---- ERP reference on the purchase orders that already exist
+  const poNoRef = await prisma.purchaseOrder.findMany({ where: { erpReference: null, source: "erp" } });
+  for (const po of poNoRef) await prisma.purchaseOrder.update({ where: { id: po.id }, data: { erpReference: `ERP-${po.poNumber.replace("PO-", "")}` } });
+
+  // ---- Key-account managers (one per branch) and a few logged activities
+  if ((await prisma.user.count({ where: { role: "key_account" } })) === 0) {
+    const kaBranches = await prisma.branch.findMany({ orderBy: { name: "asc" } });
+    for (const b of kaBranches) {
+      const sup = await prisma.user.findFirst({ where: { role: "supervisor", branchId: b.id } });
+      await prisma.user.create({ data: { name: `Key Account Manager — ${b.name.replace(" Branch", "")}`, role: "key_account", branchId: b.id, supervisorId: sup?.id, employeeCode: `KAM-${b.code ?? b.name.slice(0, 3).toUpperCase()}` } });
+    }
+  }
+  if ((await prisma.keyAccountActivity.count()) === 0) {
+    const kam = await prisma.user.findMany({ where: { role: "key_account" } });
+    const kaChannel = await prisma.channel.findFirst({ where: { name: { contains: "Key" } } });
+    for (const u of kam) {
+      const accts = kaChannel ? await prisma.outlet.findMany({ where: { channelId: kaChannel.id, branchId: u.branchId ?? undefined, status: "active" }, take: 3 }) : [];
+      for (let i = 0; i < accts.length; i++) {
+        const when = new Date();
+        when.setDate(when.getDate() - (3 + i * 9));
+        const due = new Date();
+        due.setDate(due.getDate() + (i === 0 ? -2 : 6));
+        await prisma.keyAccountActivity.create({ data: { outletId: accts[i].id, userId: u.id, type: ["business_review", "negotiation", "promo_check"][i % 3], summary: ["Quarterly business review — volumes and delivery performance", "Negotiated the festive-season price list and payment terms", "Checked chiller and end-cap execution for the running promotion"][i % 3], outcome: ["Agreed to review the delivery window", "Pending buyer sign-off", "Display compliant"][i % 3], nextAction: ["Send the revised delivery schedule", "Follow up the signed price list", "Photograph the end-cap after restock"][i % 3], nextDue: due, createdAt: when } });
+      }
+    }
+  }
+
   console.log("v2.0 extras seeded.");
 }
 

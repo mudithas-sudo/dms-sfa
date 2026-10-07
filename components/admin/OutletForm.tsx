@@ -1,13 +1,15 @@
 import Link from "next/link";
 import type { Outlet } from "@prisma/client";
 import ChannelPicker, { type ChannelOption } from "@/components/ChannelPicker";
-import { PAYMENT_TERMS, VISIT_DAYS } from "@/lib/masterdata";
+import { VISIT_DAYS } from "@/lib/masterdata";
+import type { TermOption } from "@/lib/reference";
 
 export type OutletFormValues = Partial<Record<string, string>>;
 
 // Shared by "New outlet" and "Edit outlet". `values` carries what the user typed when the
 // server sent them back (for example to show a duplicate warning).
 export default function OutletForm({
+  terms,
   action,
   outlet,
   values = {},
@@ -17,6 +19,7 @@ export default function OutletForm({
   duplicates = [],
   submitLabel,
 }: {
+  terms: TermOption[];
   action: (formData: FormData) => void | Promise<void>;
   outlet?: Outlet;
   values?: OutletFormValues;
@@ -142,6 +145,10 @@ export default function OutletForm({
           </select>
         </div>
         <div>
+          <label className="label" htmlFor="tin">Customer TIN (for e-invoices)</label>
+          <input className="input" id="tin" name="tin" defaultValue={v("tin", outlet?.tin ?? "")} placeholder="000-000-000-000" />
+        </div>
+        <div>
           <label className="label" htmlFor="businessRegRef">Business registration ref.</label>
           <input className="input" id="businessRegRef" name="businessRegRef" defaultValue={v("businessRegRef", outlet?.businessRegRef)} />
         </div>
@@ -151,7 +158,7 @@ export default function OutletForm({
         <div>
           <label className="label" htmlFor="paymentTerms">Payment terms</label>
           <select className="input" id="paymentTerms" name="paymentTerms" defaultValue={v("paymentTerms", outlet?.paymentTerms ?? "credit_30")}>
-            {PAYMENT_TERMS.map((t) => (
+            {terms.map((t) => (
               <option key={t.id} value={t.id}>{t.label}</option>
             ))}
           </select>

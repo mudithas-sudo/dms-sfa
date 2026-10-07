@@ -8,7 +8,7 @@ import { newRef } from "@/lib/offline-queue";
 
 // Mobile collection: the amount settles the oldest invoices first; cheque and bank-transfer details are captured
 // at the point of collection so the receipt and the ledger carry them.
-export default function CollectionForm({ outlets, selected, outstanding, today }: { outlets: { id: string; name: string }[]; selected?: string; outstanding: number; today: string }) {
+export default function CollectionForm({ outlets, selected, outstanding, today, banks = [] }: { outlets: { id: string; name: string }[]; selected?: string; outstanding: number; today: string; banks?: string[] }) {
   const router = useRouter();
   const [method, setMethod] = useState("cash");
   const [ref] = useState(() => newRef());
@@ -56,7 +56,8 @@ export default function CollectionForm({ outlets, selected, outstanding, today }
           </div>
           <div>
             <label className="label" htmlFor="chequeBank">Bank *</label>
-            <input className="input" id="chequeBank" name="chequeBank" required />
+            <input className="input" id="chequeBank" name="chequeBank" list="bank-list" required />
+            <datalist id="bank-list">{banks.map((b) => <option key={b} value={b} />)}</datalist>
           </div>
           <div>
             <label className="label" htmlFor="chequeBranch">Branch</label>

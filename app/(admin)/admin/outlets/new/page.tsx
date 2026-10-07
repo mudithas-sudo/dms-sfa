@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { createOutlet } from "@/app/actions/admin-actions";
 import Banner from "@/components/Banner";
 import OutletForm from "@/components/admin/OutletForm";
+import { paymentTermOptions } from "@/lib/reference";
 import { channelOptions } from "@/lib/masterdata";
 
 export default async function NewOutletPage({ searchParams }: { searchParams: Promise<Record<string, string | undefined>> }) {
@@ -33,7 +34,7 @@ export default async function NewOutletPage({ searchParams }: { searchParams: Pr
         <div className="mb-4">
           <Banner error={sp.error} />
         </div>
-        <OutletForm action={createOutlet} values={sp} branches={branches} channels={channels} routes={routes} duplicates={duplicates} submitLabel="Submit for approval" />
+        <OutletForm terms={await paymentTermOptions()} action={createOutlet} values={sp} branches={branches} channels={channels} routes={routes} duplicates={duplicates} submitLabel="Submit for approval" />
       </div>
     </div>
   );

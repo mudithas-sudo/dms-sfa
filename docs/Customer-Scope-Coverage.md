@@ -1,0 +1,19 @@
+# Coverage of the customer scope documents
+
+Validated against the three documents supplied by Company F and B: the DMS BRD, the SFA BRD and the vendor RFP.
+Legend: ✅ in the prototype · ⚪ cannot be shown in a prototype (hosting, scale, live connections).
+
+## Items added after the first gap review
+
+| Scope item | Status | Where to see it |
+|---|---|---|
+| Create a purchase order, and receive purchase orders from the ERP | ✅ | Branch → Purchase Orders → *New purchase order* / *Receive ERP purchase orders*. An ERP order with an unknown SKU lands in the exception queue and the gateway log. |
+| Merchandising application: inventory observations in; approved returns, near-expiry signals and suggested order quantities out | ✅ | Admin → Merchandising Interface. Every exchange is written to the gateway log; an outage puts it in the error queue for resend. Shelf observations show on the SFA outlet page and raise a shelf-gap alert to the supervisor. |
+| E-invoicing and tax outputs | ✅ | Supervisor → E-Invoicing & Tax (send one or all pending invoices; JSON and XML download per invoice). An invoice to a customer with no TIN is rejected with the reason and can be resent once the TIN is added. Report: *VAT sales book*. |
+| Data migration and bulk import with reconciliation | ✅ | Admin → Data Import & Migration. CSV templates for customers, products and price lists. Each file is validated first; nothing is saved until the batch is confirmed. Rejected rows download as a CSV; a reconciliation (file rows = imported + duplicates + rejected) is shown after import. |
+| Key-account activities in SFA | ✅ | New *Key Account Manager* role with its own home screen: account list, account page (sales trend, agreed terms, open tasks, activity history), next-action list. Supervisors see the accounts and recent activity under Supervisor → Key Accounts. |
+| Maintainable financial reference records | ✅ | Admin → Financial Reference Data: payment terms, banks and tax rates. They feed the customer form, payment and collection forms, invoice VAT and the e-invoice. A payment term that customers use cannot be switched off. |
+
+## Not demonstrable in a prototype
+
+Azure / Azure SQL hosting, uptime, disaster recovery, backup and archive, 250 / 600-user scale testing, optional AI capabilities beyond the rule-based insights panel, and vendor certifications.

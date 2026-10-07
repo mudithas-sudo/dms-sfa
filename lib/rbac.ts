@@ -28,6 +28,7 @@ export const DEFAULT_MATRIX: Record<RoleId, Record<ModuleId, Level>> = {
   admin: { master_data: "approve", purchasing: "approve", inventory: "approve", sales: "approve", van: "approve", promotions: "approve", finance: "approve", reports: "approve", export: "approve", users: "approve" },
   branch_ops: { master_data: "view", purchasing: "approve", inventory: "approve", sales: "view", van: "approve", promotions: "none", finance: "none", reports: "view", export: "edit", users: "none" },
   supervisor: { master_data: "view", purchasing: "view", inventory: "approve", sales: "approve", van: "approve", promotions: "approve", finance: "approve", reports: "view", export: "edit", users: "none" },
+  key_account: { master_data: "view", purchasing: "none", inventory: "view", sales: "edit", van: "none", promotions: "view", finance: "edit", reports: "view", export: "none", users: "none" },
   sales_rep: { master_data: "view", purchasing: "none", inventory: "none", sales: "edit", van: "edit", promotions: "view", finance: "edit", reports: "view", export: "none", users: "none" },
   management: { master_data: "view", purchasing: "view", inventory: "view", sales: "view", van: "view", promotions: "view", finance: "view", reports: "view", export: "edit", users: "none" },
 };
@@ -37,7 +38,7 @@ export const GROUP_ACCESS: Record<string, RoleId[]> = {
   admin: ["admin"],
   branch: ["admin", "branch_ops", "supervisor"],
   supervisor: ["admin", "supervisor"],
-  sfa: ["admin", "supervisor", "sales_rep"],
+  sfa: ["admin", "supervisor", "sales_rep", "key_account"],
   management: ["admin", "management"],
 };
 

@@ -178,6 +178,7 @@ export async function createOutlet(formData: FormData) {
       paymentTerms: str(formData, "paymentTerms") || "credit_30",
       creditLimit: num(formData, "creditLimit", 0),
       businessRegRef: strOrNull(formData, "businessRegRef"),
+      tin: strOrNull(formData, "tin"),
       remarks: strOrNull(formData, "remarks"),
       // New outlets are validated and approved before they can be sold to.
       status: "inactive",
@@ -227,6 +228,7 @@ export async function updateOutlet(formData: FormData) {
       creditLimit: num(formData, "creditLimit", before.creditLimit),
       creditStatus: str(formData, "creditStatus") || before.creditStatus,
       businessRegRef: strOrNull(formData, "businessRegRef"),
+      tin: strOrNull(formData, "tin"),
       remarks: strOrNull(formData, "remarks"),
       blockedReason: status === "blocked" ? strOrNull(formData, "blockedReason") ?? "Blocked by administrator" : null,
       previousChannelId: reclassified ? before.channelId : before.previousChannelId,

@@ -47,6 +47,10 @@ async function main() {
   // Break self/cross-referential FKs before bulk deletes so statement-level
   // FK checks never see a dangling reference mid-clear.
   await prisma.user.updateMany({ data: { supervisorId: null, routeId: null } });
+  await prisma.keyAccountActivity.deleteMany();
+  await prisma.merchandisingObservation.deleteMany();
+  await prisma.importBatch.deleteMany();
+  await prisma.referenceItem.deleteMany();
   await prisma.auditLog.deleteMany();
   await prisma.notification.deleteMany();
   await prisma.photo.deleteMany();

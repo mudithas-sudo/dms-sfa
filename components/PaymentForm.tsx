@@ -15,7 +15,7 @@ interface InvoiceRow {
 
 // Records a customer payment: mode-specific fields appear for cheques and bank transfers, and the amount can be
 // matched to chosen invoices or left to settle the oldest first.
-export default function PaymentForm({ outletId, invoices, today }: { outletId: string; invoices: InvoiceRow[]; today: string }) {
+export default function PaymentForm({ outletId, invoices, today, banks = [] }: { outletId: string; invoices: InvoiceRow[]; today: string; banks?: string[] }) {
   const [method, setMethod] = useState("cash");
   const peso = (n: number) => `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
@@ -71,7 +71,8 @@ export default function PaymentForm({ outletId, invoices, today }: { outletId: s
           </div>
           <div>
             <label className="label" htmlFor="chequeBank">Bank *</label>
-            <input className="input" id="chequeBank" name="chequeBank" required />
+            <input className="input" id="chequeBank" name="chequeBank" list="bank-list" required />
+            <datalist id="bank-list">{banks.map((b) => <option key={b} value={b} />)}</datalist>
           </div>
           <div>
             <label className="label" htmlFor="chequeBranch">Branch</label>

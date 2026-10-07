@@ -17,6 +17,7 @@ export default async function OutletDetailPage({ params, searchParams }: { param
   const bounds = ageingBounds(settings["ageing.buckets"]);
   const labels = bucketLabels(bounds);
 
+  const merch = await prisma.merchandisingObservation.findMany({ where: { outletId: id }, orderBy: { observedAt: "desc" }, take: 3 });
   const [invoices, orders, topLines, ledger, notes, returns, changes, balance] = await Promise.all([
     prisma.invoice.findMany({ where: { outletId: id, status: { in: ["unpaid", "partially_paid", "overdue"] } }, include: { arLedgerEntries: true }, orderBy: { dueDate: "asc" } }),
     prisma.salesOrder.findMany({ where: { outletId: id }, orderBy: { orderDate: "desc" }, take: 6, include: { lines: { include: { product: true } } } }),
@@ -108,6 +109,17 @@ export default async function OutletDetailPage({ params, searchParams }: { param
         )}
         {topLines.length > 0 && <p className="mt-1 text-xs text-slate-600">Top products: {topLines.map((t) => `${topNames.find((n) => n.id === t.productId)?.name ?? "?"} (${t._sum.qty})`).join(", ")}</p>}
       </div>
+
+      {merch.length > 0 && (
+        <div className="card p-4">
+          <h3 className="mb-1 text-sm font-semibold text-slate-900">Merchandiser shelf check</h3>
+          <ul className="text-xs text-slate-600">
+            {merch.map((m) => (
+              <li key={m.id}>{formatDate(m.observedAt)} — {m.observedQty} on shelf{m.shelfShare != null ? ", " + m.shelfShare + "% share" : ""}{m.observedQty < 3 ? " ⚠ shelf gap — consider an order" : ""}</li>
+            ))}
+          </ul>
+        </div>
+      )}
 
       {returns.length > 0 && (
         <div className="card p-4">

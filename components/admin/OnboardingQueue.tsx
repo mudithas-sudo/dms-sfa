@@ -6,10 +6,12 @@ import Banner from "@/components/Banner";
 import ChannelPicker from "@/components/ChannelPicker";
 import { formatCurrency, formatDateTime, daysAgo, daysBetween } from "@/lib/format";
 import { decideOutletOnboarding, findDuplicateOutlets } from "@/app/actions/admin-actions";
-import { channelOptions, PAYMENT_TERMS, VISIT_DAYS } from "@/lib/masterdata";
+import { channelOptions, VISIT_DAYS } from "@/lib/masterdata";
+import { paymentTermOptions } from "@/lib/reference";
 
 // Central onboarding queue — used by administrators and sales & finance supervisors.
 export default async function OnboardingQueue({ back, error, notice }: { back: string; error?: string; notice?: string }) {
+  const terms = await paymentTermOptions();
   const { userId } = await getSession();
   const [pending, decided, channels, routes, creators] = await Promise.all([
     prisma.outlet.findMany({
@@ -115,7 +117,7 @@ export default async function OnboardingQueue({ back, error, notice }: { back: s
                     <div>
                       <label className="label">Payment terms / price list</label>
                       <select className="input" name="paymentTerms" defaultValue={o.paymentTerms}>
-                        {PAYMENT_TERMS.map((t) => (
+                        {terms.map((t) => (
                           <option key={t.id} value={t.id}>{t.label}</option>
                         ))}
                       </select>

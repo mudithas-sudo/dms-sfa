@@ -160,6 +160,7 @@ model Outlet {
   businessRegRef    String?
   photoData         String?
   proposedRoute     String?
+  tin               String?
   proposedVisitDay  String?
   remarks           String?
   createdById       String?
@@ -455,6 +456,9 @@ model PurchaseOrder {
   exceptionReason String?
   orderDate   DateTime @default(now())
   expectedDate DateTime?
+  source      String   @default("erp") // erp | manual
+  erpReference String?
+  createdBy   String?
 
   lines         PurchaseOrderLine[]
   goodsReceipts GoodsReceipt[]
@@ -633,6 +637,10 @@ model Invoice {
   taxAmount     Float    @default(0)
   branchSeq     Int?
   status        String   @default("unpaid") // unpaid | partially_paid | paid | overdue | voided
+  einvoiceStatus String  @default("not_sent") // not_sent | sent | accepted | rejected
+  einvoiceRef    String?
+  einvoiceSentAt DateTime?
+  einvoiceError  String?
   deliveryStatus String  @default("delivered") // pending_delivery | out_for_delivery | delivered | partially_delivered | redelivery_scheduled | returned
 
   lines            InvoiceLine[]
@@ -1459,4 +1467,61 @@ model CustomerChangeRequest {
   decisionNote  String?
   createdAt     DateTime  @default(now())
   decidedAt     DateTime?
+}
+
+// Maintainable reference data: payment terms, banks and tax rates.
+model ReferenceItem {
+  id        String   @id @default(cuid())
+  kind      String   // payment_term | bank | tax_rate
+  code      String
+  label     String
+  value     Float?   // payment term: days; tax rate: percent
+  isDefault Boolean  @default(false)
+  status    String   @default("active") // active | inactive
+  createdAt DateTime @default(now())
+
+  @@unique([kind, code])
+}
+
+// What the merchandising application reports from the shelf (inbound over the interface).
+model MerchandisingObservation {
+  id          String   @id @default(cuid())
+  outletId    String
+  productId   String
+  observedQty Int
+  shelfShare  Float?
+  facings     Int?
+  source      String   @default("merchandising_app")
+  observedAt  DateTime @default(now())
+  note        String?
+}
+
+// Bulk import with line-level validation and a reconciliation record.
+model ImportBatch {
+  id        String   @id @default(cuid())
+  dataset   String   // customers | products | prices
+  filename  String
+  totalRows Int
+  valid     Int
+  rejected  Int
+  imported  Int      @default(0)
+  status    String   @default("validated") // validated | imported | discarded
+  rows      String   // JSON: [{line, key, outcome, message}]
+  createdBy String
+  createdAt DateTime @default(now())
+  importedAt DateTime?
+}
+
+// A key-account manager's account activity log and next actions.
+model KeyAccountActivity {
+  id         String   @id @default(cuid())
+  outletId   String
+  userId     String
+  type       String   // business_review | negotiation | promo_check | executive_visit | issue_resolution | planning
+  summary    String
+  outcome    String?
+  nextAction String?
+  nextDue    DateTime?
+  status     String   @default("open") // open | done
+  createdAt  DateTime @default(now())
 }

@@ -147,3 +147,7 @@ device-level mechanisms the proposal itself describes as deployment concerns.
 | 4.5 Offline & sync | ✅ (⚪ engine) | Offline queue and sync centre |
 | 4.6 Promotion → claim settlement | ✅ | Promotion → qualifying orders → claim → review → settlement |
 | 4.7 Return to central warehouse | ✅ | Central return with ERP posting states |
+
+## 5. Additions from the customer scope review
+
+See [Customer-Scope-Coverage.md](Customer-Scope-Coverage.md): PO creation and ERP feed, merchandising interface, e-invoicing and VAT sales book, bulk import with reconciliation, key-account role and activities, financial reference data.

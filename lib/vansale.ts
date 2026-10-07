@@ -3,6 +3,7 @@ import { logAudit } from "@/lib/audit";
 import { changeBalance } from "@/lib/stock";
 import { getRepVan, sellableByProduct } from "@/lib/van";
 import { dueDateFor, nextInvoiceNumber, vatOf } from "@/lib/orders";
+import { currentVatRate } from "@/lib/reference";
 import { outletBalance } from "@/lib/finance";
 import { sendMessage } from "@/lib/integration";
 
@@ -26,7 +27,7 @@ export async function completeVanSale(orderId: string, by: string): Promise<{ in
   const invoice = await prisma.invoice.create({
     data: {
       invoiceNumber: number, branchSeq: seq, salesOrderId: order.id, outletId: order.outletId, branchId: order.branchId,
-      dueDate: dueDateFor(order.paymentTerms ?? order.outlet.paymentTerms), amount: order.total, taxAmount: vatOf(order.total), status: "unpaid", deliveryStatus: "delivered",
+      dueDate: dueDateFor(order.paymentTerms ?? order.outlet.paymentTerms), amount: order.total, taxAmount: vatOf(order.total, await currentVatRate()), status: "unpaid", deliveryStatus: "delivered",
     },
   });
   for (const line of order.lines) {

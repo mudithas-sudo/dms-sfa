@@ -52,7 +52,7 @@ export default async function MobileShell({
         <main className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4">
           {groupAllowed(role, "sfa") ? children : <Forbidden role={role} area="Field Sales (mobile)" />}
         </main>
-        <MobileBottomNav />
+        <MobileBottomNav role={role} />
       </div>
     </div>
   );

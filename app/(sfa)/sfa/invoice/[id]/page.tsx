@@ -14,7 +14,7 @@ export default async function MobileInvoicePage({ params, searchParams }: { para
   const { copy, error, notice } = await searchParams;
   const inv = await prisma.invoice.findUnique({ where: { id }, include: { outlet: true, branch: true, lines: { include: { product: true } }, arLedgerEntries: true, salesOrder: true } });
   if (!inv) notFound();
-  const { vatableSales, vatAmount } = vatBreakdown(inv.amount);
+  const { vatableSales, vatAmount } = vatBreakdown(inv.amount, inv.taxAmount > 0 && inv.amount > 0 ? inv.taxAmount / (inv.amount - inv.taxAmount) : 0);
   const open = invoiceBalance(inv);
   const reprints = await prisma.auditLog.count({ where: { entity: "Invoice", entityId: inv.invoiceNumber, action: "reprint" } });
 

@@ -54,10 +54,22 @@ import {
   UserCog,
   Gauge,
   Bell,
+  Landmark,
+  Upload,
+  FileCheck2,
+  Briefcase,
+  Share2,
+  ShoppingCart,
   type LucideIcon,
 } from "lucide-react";
 
 const ICONS: Record<string, LucideIcon> = {
+  Landmark,
+  Upload,
+  FileCheck2,
+  Briefcase,
+  Share2,
+  ShoppingCart,
   Building2,
   Store,
   Package,

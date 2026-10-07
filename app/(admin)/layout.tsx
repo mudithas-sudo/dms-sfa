@@ -13,6 +13,8 @@ const navItems: NavItem[] = [
   { href: "/admin/territories", label: "Territories", icon: "Map" },
   { href: "/admin/personnel", label: "Sales Personnel", icon: "Users" },
   { href: "/admin/warehouses-vans", label: "Warehouses & Vans", icon: "Warehouse" },
+  { href: "/admin/reference-data", label: "Financial Reference Data", icon: "Landmark" },
+  { href: "/admin/data-import", label: "Data Import & Migration", icon: "Upload" },
   { href: "/admin/pricing", label: "Pricing Engine", icon: "Tags", section: "Commercial" },
   { href: "/admin/customer-discounts", label: "Customer Discounts", icon: "Percent" },
   { href: "/admin/promotions", label: "Promotions", icon: "Megaphone" },
@@ -28,6 +30,7 @@ const navItems: NavItem[] = [
   { href: "/admin/audit-log", label: "Audit Log", icon: "ScrollText" },
   { href: "/admin/devices", label: "Devices & Sync", icon: "Smartphone" },
   { href: "/admin/integrations", label: "Integrations & Gateway", icon: "Cable" },
+  { href: "/admin/merchandising", label: "Merchandising Interface", icon: "Share2" },
 ];
 
 export default async function AdminLayout({ children }: { children: React.ReactNode }) {

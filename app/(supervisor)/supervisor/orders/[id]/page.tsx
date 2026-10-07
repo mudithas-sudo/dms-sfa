@@ -5,7 +5,7 @@ import StatusBadge from "@/components/StatusBadge";
 import Banner from "@/components/Banner";
 import { formatCurrency, formatDate, formatDateTime } from "@/lib/format";
 import { ORDER_EDIT_RULES, type Check } from "@/lib/orders";
-import { termsLabel } from "@/lib/masterdata";
+import { termLabelOf } from "@/lib/reference";
 import {
   updateOrderLines, submitDraftOrder, deleteDraftOrder, updateOrderDetails, cancelOrder, issueInvoice,
 } from "@/app/actions/sales-actions";
@@ -63,7 +63,7 @@ export default async function OrderDetailPage({
           <h2 className="text-base font-semibold text-slate-900">{order.orderNumber} — {order.outlet.name}</h2>
           <p className="text-xs text-slate-500">
             {order.source === "backend" ? "Backend entry" : "From the SFA app"} ({order.orderType === "van_sale" ? "van sale" : "pre-sales"}) by {order.salesperson.name} · {formatDateTime(order.orderDate)} ·{" "}
-            {termsLabel(order.paymentTerms ?? order.outlet.paymentTerms)}
+            {await termLabelOf(order.paymentTerms ?? order.outlet.paymentTerms)}
             {order.requestedDeliveryDate && ` · delivery requested ${formatDate(order.requestedDeliveryDate)}`}
           </p>
           {order.remarks && <p className="text-xs text-slate-500">Remarks: {order.remarks}</p>}

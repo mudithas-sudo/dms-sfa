@@ -1,6 +1,7 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { currentVatRate } from "@/lib/reference";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
@@ -505,7 +506,7 @@ export async function issueInvoice(formData: FormData) {
   const invoice = await prisma.invoice.create({
     data: {
       invoiceNumber: number, branchSeq: seq, salesOrderId: id, outletId: order.outletId, branchId: order.branchId,
-      dueDate: dueDateFor(order.paymentTerms ?? order.outlet.paymentTerms), amount, taxAmount: vatOf(amount), status: "unpaid", deliveryStatus: "pending_delivery",
+      dueDate: dueDateFor(order.paymentTerms ?? order.outlet.paymentTerms), amount, taxAmount: vatOf(amount, await currentVatRate()), status: "unpaid", deliveryStatus: "pending_delivery",
     },
   });
   for (const x of value) {
@@ -567,7 +568,7 @@ export async function confirmDelivery(formData: FormData) {
   if (anyShort) {
     const pos = await outletPosition(inv.outletId);
     const diff = invoiced - delivered;
-    await prisma.invoice.update({ where: { id }, data: { amount: delivered, taxAmount: vatOf(delivered) } });
+    await prisma.invoice.update({ where: { id }, data: { amount: delivered, taxAmount: vatOf(delivered, await currentVatRate()) } });
     await prisma.aRLedgerEntry.create({ data: { outletId: inv.outletId, invoiceId: id, type: "adjustment", amount: -diff, balance: pos.outstanding - diff, reference: dr.drNumber } });
   }
   const dStatus = status === "failed" ? "returned" : anyShort ? "partially_delivered" : "delivered";

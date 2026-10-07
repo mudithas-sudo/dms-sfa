@@ -401,6 +401,24 @@ export const REPORTS: ReportDef[] = [
       return { columns: [{ key: "type", label: "Type" }, { key: "ref", label: "Reference" }, { key: "date", label: "Date", type: "date" }, { key: "branch", label: "Branch" }, { key: "from", label: "From" }, { key: "product", label: "Product" }, { key: "qty", label: "Qty", type: "int" }, { key: "value", label: "Value", type: "money" }, { key: "reason", label: "Reason" }, { key: "status", label: "Status" }], rows, totals: { type: `${rows.length} returns`, qty: sum(rows, (r) => Number(r.qty)), value: sum(rows, (r) => Number(r.value)) } };
     },
   },
+  {
+    id: "vat-sales-book",
+    title: "VAT sales book",
+    area: "receivables",
+    purpose: "Every invoice with vatable sales, VAT, total and e-invoice status — the basis of the VAT return.",
+    module: "finance",
+    filters: [BR, D(), D("To", "dateTo"), { key: "einvoice", label: "E-invoice status", type: "select", options: [{ value: "not_sent", label: "Not sent" }, { value: "accepted", label: "Accepted" }, { value: "rejected", label: "Rejected" }] }, { key: "includeVoided", label: "Voided invoices", type: "select", options: [{ value: "no", label: "Exclude" }, { value: "yes", label: "Show (as reversed)" }] }],
+    async run(f, s) {
+      const ids = branches(f, s);
+      const { from, to } = range(f, 31);
+      const inv = await prisma.invoice.findMany({ where: { invoiceDate: { gte: from, lte: to }, ...inBranches(ids), ...(f.einvoice ? { einvoiceStatus: f.einvoice } : {}), ...(f.includeVoided === "yes" ? {} : { status: { not: "voided" } }) }, include: { outlet: true, branch: true }, orderBy: [{ branchId: "asc" }, { invoiceDate: "asc" }] });
+      const rows = inv.map((i) => {
+        const sign = i.status === "voided" ? -1 : 1;
+        return { _href: `/supervisor/invoices/${i.id}`, date: iso(i.invoiceDate), number: i.invoiceNumber, branch: i.branch.name, customer: i.outlet.name, tin: i.outlet.tin ?? "", vatable: sign * (i.amount - i.taxAmount), vat: sign * i.taxAmount, total: sign * i.amount, status: i.status === "voided" ? "voided (reversed)" : i.status.replace("_", " "), einvoice: i.einvoiceStatus.replace("_", " ") };
+      });
+      return { columns: [{ key: "date", label: "Date", type: "date" }, { key: "number", label: "Invoice" }, { key: "branch", label: "Branch" }, { key: "customer", label: "Customer" }, { key: "tin", label: "Buyer TIN" }, { key: "vatable", label: "Vatable sales", type: "money" }, { key: "vat", label: "VAT", type: "money" }, { key: "total", label: "Total", type: "money" }, { key: "status", label: "Status" }, { key: "einvoice", label: "E-invoice" }], rows, totals: { number: `${rows.length} invoices`, vatable: sum(rows, (r) => r.vatable), vat: sum(rows, (r) => r.vat), total: sum(rows, (r) => r.total) }, note: "VAT is computed from the rate in force when each invoice was issued." };
+    },
+  },
   // ---------------------------------------------------------------- receivables
   {
     id: "receivables-ageing",

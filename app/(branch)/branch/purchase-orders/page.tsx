@@ -6,6 +6,7 @@ import Banner from "@/components/Banner";
 import { formatDate, daysAgo } from "@/lib/format";
 import { flagPoException } from "@/app/actions/inventory-actions";
 import { receivedByProduct } from "@/lib/stock";
+import { receiveErpPurchaseOrders } from "@/app/actions/po-actions";
 
 export default async function PurchaseOrdersPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
   const { error, notice } = await searchParams;
@@ -30,12 +31,18 @@ export default async function PurchaseOrdersPage({ searchParams }: { searchParam
 
   return (
     <div className="space-y-6">
-      <div>
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div>
         <h2 className="text-base font-semibold text-slate-900">Purchase Orders</h2>
         <p className="mt-1 text-xs text-slate-500">
           Orders arrive from the ERP for this branch. The status moves from Pending to Partially Received to Fully Received as receipts are posted; orders that need attention
-          are collected in the exception queue until resolved or closed.
+          are collected in the exception queue until resolved or closed. A branch can also create a purchase reference of its own.
         </p>
+        </div>
+        <div className="flex gap-2">
+          <Link href="/branch/purchase-orders/new" className="btn-primary">New purchase order</Link>
+          <form action={receiveErpPurchaseOrders}><button className="btn-secondary" type="submit">Receive ERP PO feed (simulate)</button></form>
+        </div>
       </div>
       <Banner error={error} notice={notice} />
 
