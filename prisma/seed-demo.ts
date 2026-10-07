@@ -36,7 +36,9 @@ export async function seedDemo(prisma: PrismaClient) {
     const mkOrder = async (b: (typeof branches)[number], outletIdx: number, items: [number, number][], opts: { age: number; status?: string; hold?: string; source?: string; urgent?: boolean }) => {
       const outlets = await prisma.outlet.findMany({ where: { branchId: b.id, status: "active", onboardingStatus: "approved", creditStatus: "active" }, orderBy: { code: "asc" } });
       const outlet = outlets[outletIdx % outlets.length];
-      const rep = roleOf("sales_rep", b.id) ?? roleOf("supervisor", b.id)!;
+      // spread the orders over the branch's reps so every rep has some in the field app
+      const reps = users.filter((u) => u.role === "sales_rep" && u.branchId === b.id);
+      const rep = reps.length ? reps[outletIdx % reps.length] : roleOf("supervisor", b.id)!;
       const pricing = await priceOrder(outlet.id, items.map(([pi, qty]) => ({ productId: products[pi % products.length].id, qty })));
       const order = await prisma.salesOrder.create({
         data: {
@@ -426,6 +428,15 @@ export async function seedDemo(prisma: PrismaClient) {
       const o = outletsAll[i * 2 % outletsAll.length];
       const qty = [2, 8, 0, 14, 5, 1, 9, 3, 11, 0, 6, 4][i];
       await prisma.merchandisingObservation.create({ data: { outletId: o.id, productId: products[(i * 3) % products.length].id, observedQty: qty, facings: qty < 3 ? 1 : 3, shelfShare: 18 + ((i * 7) % 32), observedAt: daysAgo(i % 5), note: qty < 3 ? "Shelf gap — reorder suggested" : null } });
+    }
+  }
+
+  if ((await prisma.goodsReceiptAttachment.count()) === 0) {
+    const receipts = await prisma.goodsReceipt.findMany({ orderBy: { receivedDate: "desc" }, take: 5 });
+    const docs: [string, string, string][] = [["supplier-delivery-receipt.pdf", "delivery_receipt", "Signed by the receiving clerk"], ["packing-list.pdf", "packing_list", "Matches the purchase order lines"], ["damage-report-photos.pdf", "damage_report", "Two cartons crushed on arrival"]];
+    for (let i = 0; i < receipts.length; i++) {
+      const [filename, docType, description] = docs[i % docs.length];
+      await prisma.goodsReceiptAttachment.create({ data: { goodsReceiptId: receipts[i].id, filename, docType, description, uploadedBy: users.find((u) => u.role === "branch_ops")?.name ?? "Branch Ops" } });
     }
   }
 
