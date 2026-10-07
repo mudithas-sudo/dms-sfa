@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import KpiCard from "@/components/KpiCard";
+import HeadOfficeOverview from "@/components/HeadOfficeOverview";
 import { formatDateTime } from "@/lib/format";
 import { Building2, Store, Package, Megaphone } from "lucide-react";
 import Link from "next/link";
@@ -15,6 +16,8 @@ export default async function AdminOverview() {
 
   return (
     <div className="space-y-6">
+      <HeadOfficeOverview />
+      <h2 className="pt-2 text-sm font-semibold text-slate-900">Master data &amp; platform</h2>
       <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
         <KpiCard label="Branches" value={String(branchCount)} icon={Building2} />
         <KpiCard label="Active Outlets" value={String(outletCount)} icon={Store} />

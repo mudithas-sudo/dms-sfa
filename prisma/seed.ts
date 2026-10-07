@@ -724,6 +724,7 @@ async function main() {
         claimNumber: `CLM-${pad(claimSeq++, 4)}`,
         promotionId: promo.id,
         submittedById: submitter.id,
+        branchId: branch.id,
         amount: randInt(8000, 45000),
         status,
         submittedAt: daysAgo(randInt(5, 20)),

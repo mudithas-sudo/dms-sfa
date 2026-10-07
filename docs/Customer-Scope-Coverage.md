@@ -17,3 +17,7 @@ Legend: ✅ in the prototype · ⚪ cannot be shown in a prototype (hosting, sca
 ## Not demonstrable in a prototype
 
 Azure / Azure SQL hosting, uptime, disaster recovery, backup and archive, 250 / 600-user scale testing, optional AI capabilities beyond the rule-based insights panel, and vendor certifications.
+
+## Head-office visibility (central administrator)
+
+The administrator's home page is the control tower: sales against target, receivables and overdue, collections, customer returns, central-warehouse returns, stock value and near-expiry, claims in progress, with a branch-by-branch comparison. A "Needs head-office attention" list puts approvals waiting for head office, credit holds, returns awaiting credit notes, central-warehouse return discrepancies, open claims, change requests, purchase-order exceptions, rejected e-invoices and integration errors first. Each branch opens into its own profile (ageing, largest overdue customers, returns, claims, pending approvals, near-expiry lots). Receivables and returns by branch remain under Reporting → Branch Network View.

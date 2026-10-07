@@ -348,6 +348,74 @@ export async function seedExtras(prisma: PrismaClient) {
     }
   }
 
+  // ---- Head-office view: approvals carry their branch, central-warehouse returns, more customer returns, a write-off for head office
+  const noBranch = await prisma.approvalRequest.findMany({ where: { branchId: null } });
+  if (noBranch.length) {
+    const people = await prisma.user.findMany({ select: { name: true, branchId: true } });
+    for (const a of noBranch) {
+      const so = a.salesOrderId ? await prisma.salesOrder.findUnique({ where: { id: a.salesOrderId }, select: { branchId: true } }) : null;
+      const bId = so?.branchId ?? people.find((u) => u.name === a.requestedBy)?.branchId ?? null;
+      if (bId) await prisma.approvalRequest.update({ where: { id: a.id }, data: { branchId: bId } });
+    }
+  }
+  const claimsNoBranch = await prisma.claim.findMany({ where: { branchId: null }, include: { submittedBy: true } });
+  for (const c of claimsNoBranch) if (c.submittedBy.branchId) await prisma.claim.update({ where: { id: c.id }, data: { branchId: c.submittedBy.branchId } });
+
+  if ((await prisma.supplierReturn.count()) === 0) {
+    const whs = await prisma.warehouse.findMany({ orderBy: { name: "asc" } });
+    const plan: [number, string, number, string][] = [
+      [0, "expired", 48, "shipped"], [0, "damaged", 24, "pending"],
+      [1, "expired", 60, "received"], [1, "damaged", 12, "posted_to_erp"],
+      [2, "expired", 36, "approved"], [2, "recalled", 20, "shipped"],
+    ];
+    let seq = 1;
+    for (const [wi, reason, qty, status] of plan) {
+      const wh = whs[wi];
+      if (!wh) continue;
+      const lots = await prisma.stockBalance.findMany({ where: { warehouseId: wh.id, locationType: "warehouse" }, orderBy: { expiryDate: "asc" }, take: 6 });
+      const lot = lots[seq % Math.max(1, lots.length)];
+      if (!lot) continue;
+      const ops = await prisma.user.findFirst({ where: { role: "branch_ops", branchId: wh.branchId } });
+      const sent = new Date();
+      sent.setDate(sent.getDate() - (2 + seq));
+      const shipped = ["shipped", "received", "posted_to_erp"].includes(status);
+      const received = status === "received" || status === "posted_to_erp";
+      await prisma.supplierReturn.create({
+        data: {
+          returnNumber: `RTN-${String(seq).padStart(4, "0")}`, warehouseId: wh.id, productId: lot.productId, lotNumber: lot.lotNumber, qty, reason, status,
+          requestedBy: ops?.name ?? "Branch Ops", approvedBy: status === "pending" ? null : "Branch manager", expiryDate: lot.expiryDate, createdAt: sent,
+          dispatchedAt: shipped ? sent : null,
+          qtyReceived: received ? (status === "received" ? qty - 6 : qty) : null, receivedBy: received ? "Central warehouse" : null, receivedAt: received ? new Date() : null,
+          discrepancyNote: status === "received" ? `Received ${qty - 6} of ${qty} — 6 units crushed in transit` : null,
+          erpReference: status === "posted_to_erp" ? `ERP-RTN-${String(seq).padStart(4, "0")}` : null, postedToErpAt: status === "posted_to_erp" ? new Date() : null,
+        },
+      });
+      seq++;
+    }
+  }
+
+  if ((await prisma.marketReturn.count()) < 5) {
+    const brs = await prisma.branch.findMany({ orderBy: { name: "asc" } });
+    const prods = await prisma.product.findMany({ where: { status: "active" }, orderBy: { sku: "asc" }, take: 8 });
+    const extra: [number, number, number, string, boolean][] = [[0, 1, 10, "Expired on the shelf — beyond the return window", true], [2, 2, 8, "Damaged cartons at delivery", false], [2, 3, 5, "Wrong item delivered", false]];
+    for (const [bi, pi, qty, reason, outside] of extra) {
+      const outlet = await prisma.outlet.findFirst({ where: { branchId: brs[bi]?.id, status: "active" }, orderBy: { code: "desc" } });
+      const rep = await prisma.user.findFirst({ where: { role: "sales_rep", branchId: brs[bi]?.id } });
+      if (!outlet || !prods[pi]) continue;
+      await prisma.marketReturn.create({ data: { outletId: outlet.id, productId: prods[pi].id, qty, reason, outsidePolicy: outside, photoPlaceholder: true, status: "pending", capturedBy: rep?.name ?? "Rep", createdAt: new Date(Date.now() - (pi + 1) * 86400000) } });
+    }
+  }
+
+  if ((await prisma.financialDocument.count()) === 0) {
+    const b = await prisma.branch.findFirst({ orderBy: { name: "desc" } });
+    const od = b ? await prisma.invoice.findFirst({ where: { branchId: b.id, status: { in: ["unpaid", "partially_paid", "overdue"] }, dueDate: { lt: new Date() } }, include: { outlet: true }, orderBy: { dueDate: "asc" } }) : null;
+    const sup = b ? await prisma.user.findFirst({ where: { role: "supervisor", branchId: b.id } }) : null;
+    if (b && od && sup) {
+      const doc = await prisma.financialDocument.create({ data: { docNumber: "WO-00001", type: "write_off", outletId: od.outletId, invoiceId: od.id, amount: 3500, reason: "Customer closed the store — balance uncollectible", requestedBy: sup.id } });
+      await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: doc.id, outletId: od.outletId, branchId: b.id, requestedBy: sup.id, amount: 3500, reason: `WO-00001 — write off for ${od.outlet.name}: customer closed the store · needs head office finance approval` } });
+    }
+  }
+
   console.log("v2.0 extras seeded.");
 }
 

@@ -6,7 +6,7 @@ import AutoRefresh from "@/components/dashboards/AutoRefresh";
 
 // Head-office consolidated view: receivables and returns for every branch side by side, with a drill-down into the
 // matching report for each branch.
-export default async function NetworkView({ reportsBase, days }: { reportsBase: string; days: number }) {
+export default async function NetworkView({ reportsBase, days, profileBase }: { reportsBase: string; days: number; profileBase?: string }) {
   const scope = await currentScope();
   const { rows, labels } = await branchRollup(scope, days);
   const sum = (f: (r: (typeof rows)[number]) => number) => rows.reduce((a, r) => a + f(r), 0);
@@ -53,7 +53,7 @@ export default async function NetworkView({ reportsBase, days }: { reportsBase: 
           <tbody className="divide-y divide-slate-100">
             {rows.map((r) => (
               <tr key={r.id} className="hover:bg-slate-50">
-                <td className="td font-medium text-slate-900">{r.name}</td>
+                <td className="td font-medium text-slate-900">{profileBase ? <Link className="text-blue-700 hover:underline" href={`${profileBase}/${r.id}`}>{r.name}</Link> : r.name}</td>
                 <td className="td text-right"><Link className="text-blue-700 hover:underline" href={rep("receivables-ageing", r.id)}>{formatCurrency(r.outstanding)}</Link></td>
                 {r.buckets.map((b, i) => <td key={i} className={`td text-right ${i > 0 && b ? "text-rose-600" : ""}`}>{b ? formatCurrency(b) : "—"}</td>)}
                 <td className="td text-right">{r.outstanding ? `${Math.round((r.overdue / r.outstanding) * 100)}%` : "—"}</td>
