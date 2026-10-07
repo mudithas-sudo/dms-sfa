@@ -223,6 +223,33 @@ export const DASHBOARDS: DashboardDef[] = [
     },
   },
   {
+    id: "returns",
+    title: "Returns",
+    blurb: "Market, van and central-warehouse returns across branches.",
+    module: "sales",
+    filters: ["branch", "date"],
+    async tiles(f, s) {
+      const ids = branchIds(f, s);
+      const { from, to } = period(f, 30);
+      const [mk, vn, ct] = await Promise.all([
+        prisma.marketReturn.findMany({ where: { createdAt: { gte: from, lte: to }, outlet: ids ? { branchId: { in: ids } } : undefined }, include: { product: true } }),
+        prisma.vanReturn.findMany({ where: { createdAt: { gte: from, lte: to }, van: ids ? { branchId: { in: ids } } : undefined } }),
+        prisma.supplierReturn.findMany({ where: { createdAt: { gte: from, lte: to }, warehouse: ids ? { branchId: { in: ids } } : undefined } }),
+      ]);
+      const link = (t: string, extra = "") => `/reports/returns-register?${q(f, { docType: t })}${extra}`;
+      return [
+        { label: "Market returns", value: num(mk.length), sub: peso(mk.reduce((a, r) => a + r.product.unitPrice * r.qty, 0)), href: link("market") },
+        { label: "Awaiting credit note", value: num(mk.filter((r) => r.status === "pending").length), tone: mk.some((r) => r.status === "pending") ? "warn" : "good", href: link("market", "&status=pending") },
+        { label: "Outside return policy", value: num(mk.filter((r) => r.outsidePolicy).length), href: link("market") },
+        { label: "Van returns", value: num(vn.length), sub: `${vn.reduce((a, r) => a + (r.qtyReceived ?? r.qty), 0)} units`, href: link("van") },
+        { label: "Van returns with open variance", value: num(vn.filter((r) => ["variance_pending", "variance_open"].includes(r.status)).length), tone: vn.some((r) => ["variance_pending", "variance_open"].includes(r.status)) ? "bad" : "good", href: link("van") },
+        { label: "Returns to central warehouse", value: num(ct.length), sub: `${ct.reduce((a, r) => a + r.qty, 0)} units`, href: link("central") },
+        { label: "In transit to central", value: num(ct.filter((r) => ["shipped", "in_transit"].includes(r.status)).length), href: link("central") },
+        { label: "Central-return discrepancies", value: num(ct.filter((r) => !!r.discrepancyNote).length), tone: ct.some((r) => !!r.discrepancyNote) ? "bad" : "good", href: link("central") },
+      ];
+    },
+  },
+  {
     id: "receivables",
     title: "Receivables",
     blurb: "Outstanding balance, ageing, overdue invoices, collections and customers over limit.",
@@ -232,7 +259,7 @@ export const DASHBOARDS: DashboardDef[] = [
       const ids = branchIds(f, s);
       const { from, to } = period(f, 30);
       const invoices = await prisma.invoice.findMany({ where: { status: { in: ["unpaid", "partially_paid", "overdue"] }, ...B(ids) }, include: { arLedgerEntries: true, outlet: true } });
-      const pays = await prisma.aRLedgerEntry.aggregate({ where: { type: "payment", entryDate: { gte: from, lte: to }, recStatus: { not: "reversed" }, paymentStatus: { notIn: ["pending", "bounced"] }, outlet: ids ? { branchId: { in: ids } } : undefined }, _sum: { amount: true } });
+      const pays = await prisma.aRLedgerEntry.aggregate({ where: { type: "payment", entryDate: { gte: from, lte: to }, recStatus: { not: "reversed" }, OR: [{ paymentStatus: null }, { paymentStatus: { notIn: ["pending", "bounced"] } }], outlet: ids ? { branchId: { in: ids } } : undefined }, _sum: { amount: true } });
       const now = new Date();
       let outstanding = 0;
       let overdue = 0;

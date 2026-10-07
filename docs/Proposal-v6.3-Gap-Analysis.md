@@ -96,6 +96,7 @@ device-level mechanisms the proposal itself describes as deployment concerns.
 | Feature | Status | Where / how |
 |---|---|---|
 | Role dashboards on a shared framework (customer, route, sales, inventory, purchasing, claims, receivables) with branch / date / channel / route / rep filters, last-refresh stamp, auto-refresh, drill-down | ✅ | Dashboards in the Admin, Branch, Supervisor and Management areas |
+| Head-office consolidated view: receivables ageing, collections, credit holds, market / van / central-warehouse returns and open claims for every branch side by side, with drill-down; network ageing by branch, route or customer; returns register | ✅ | Admin and Management → Branch Network View; Reports → Returns register, Receivables ageing (group by); Returns dashboard |
 | Standard report catalog — the 11 reports plus the field-force reports, per-report permission, filters, header block | ✅ | Reports in each area |
 | Excel / CSV / PDF export, separate export permission, export log | ✅ | Every report; audit trail export |
 | Scheduled reports (relative dates, owner scope, run history, report inbox, failure notice and repeat) | ✅ | Admin → Scheduled Reports |

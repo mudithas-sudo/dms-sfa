@@ -373,6 +373,34 @@ export const REPORTS: ReportDef[] = [
       return { columns: [{ key: "number", label: "Claim" }, { key: "promo", label: "Promotion" }, { key: "by", label: "Raised by" }, { key: "date", label: "Date", type: "date" }, { key: "eligible", label: "Eligible", type: "money" }, { key: "amount", label: "Claimed", type: "money" }, { key: "status", label: "Status" }, { key: "ref", label: "Settlement ref." }, { key: "age", label: "Age (days)", type: "int" }], rows, totals: { number: `${rows.length} claims`, eligible: sum(rows, (r) => Number(r.eligible ?? 0)), amount: sum(rows, (r) => Number(r.amount)) } };
     },
   },
+  {
+    id: "returns-register",
+    title: "Returns register (market, van and central warehouse)",
+    area: "sales",
+    purpose: "Goods coming back from customers, vans and branches, by branch, with value and status.",
+    module: "sales",
+    filters: [BR, D(), D("To", "dateTo"), { key: "docType", label: "Return type", type: "select", options: [{ value: "market", label: "Market returns (from customers)" }, { value: "van", label: "Van returns (to branch warehouse)" }, { value: "central", label: "Returns to central warehouse" }] }, { key: "status", label: "Status", type: "text" }],
+    async run(f, s) {
+      const ids = branches(f, s);
+      const { from, to } = range(f, 90);
+      const want = (t: string) => !f.docType || f.docType === t;
+      const rows: Record<string, Cell>[] = [];
+      if (want("market")) {
+        const rets = await prisma.marketReturn.findMany({ where: { createdAt: { gte: from, lte: to }, outlet: inBranches(ids), ...(f.status ? { status: f.status } : {}) }, include: { outlet: { include: { branch: true } }, product: true, creditNote: true }, orderBy: { createdAt: "desc" } });
+        for (const r of rets) rows.push({ _href: "/supervisor/market-returns", type: "Market return", ref: r.creditNote?.noteNumber ?? r.id.slice(-8).toUpperCase(), date: iso(r.createdAt), branch: r.outlet.branch.name, from: r.outlet.name, product: r.product.name, qty: r.qty, value: r.product.unitPrice * r.qty, reason: r.reason.replace(/_/g, " ") + (r.outsidePolicy ? " (outside policy)" : ""), status: r.creditNote ? `credit note ${r.creditNote.status.replace(/_/g, " ")}` : r.status });
+      }
+      if (want("van")) {
+        const rets = await prisma.vanReturn.findMany({ where: { createdAt: { gte: from, lte: to }, van: inBranches(ids), ...(f.status ? { status: f.status } : {}) }, include: { van: { include: { branch: true } }, product: true }, orderBy: { createdAt: "desc" } });
+        for (const r of rets) rows.push({ _href: "/branch/van-returns", type: "Van return", ref: r.returnNumber ?? r.id.slice(-8).toUpperCase(), date: iso(r.createdAt), branch: r.van.branch.name, from: r.van.code, product: r.product.name, qty: r.qtyReceived ?? r.qty, value: (r.qtyReceived ?? r.qty) * r.product.unitPrice, reason: `${r.condition}${r.reason ? " — " + r.reason : ""}${r.qtyDeclared !== null && r.qtyReceived !== null && r.qtyDeclared !== r.qtyReceived ? ` (declared ${r.qtyDeclared}, received ${r.qtyReceived})` : ""}`, status: r.status.replace(/_/g, " ") });
+      }
+      if (want("central")) {
+        const rets = await prisma.supplierReturn.findMany({ where: { createdAt: { gte: from, lte: to }, warehouse: inBranches(ids), ...(f.status ? { status: f.status } : {}) }, include: { warehouse: { include: { branch: true } }, product: true }, orderBy: { createdAt: "desc" } });
+        for (const r of rets) rows.push({ _href: "/branch/supplier-returns", type: "To central warehouse", ref: r.returnNumber ?? r.id.slice(-8).toUpperCase(), date: iso(r.createdAt), branch: r.warehouse.branch.name, from: r.warehouse.name, product: r.product.name, qty: r.qtyReceived ?? r.qty, value: (r.qtyReceived ?? r.qty) * r.product.unitPrice, reason: r.reason + (r.discrepancyNote ? ` — discrepancy: ${r.discrepancyNote}` : ""), status: r.status.replace(/_/g, " ") + (r.erpReference ? ` · ERP ${r.erpReference}` : "") });
+      }
+      rows.sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      return { columns: [{ key: "type", label: "Type" }, { key: "ref", label: "Reference" }, { key: "date", label: "Date", type: "date" }, { key: "branch", label: "Branch" }, { key: "from", label: "From" }, { key: "product", label: "Product" }, { key: "qty", label: "Qty", type: "int" }, { key: "value", label: "Value", type: "money" }, { key: "reason", label: "Reason" }, { key: "status", label: "Status" }], rows, totals: { type: `${rows.length} returns`, qty: sum(rows, (r) => Number(r.qty)), value: sum(rows, (r) => Number(r.value)) } };
+    },
+  },
   // ---------------------------------------------------------------- receivables
   {
     id: "receivables-ageing",
@@ -380,7 +408,7 @@ export const REPORTS: ReportDef[] = [
     area: "receivables",
     purpose: "Outstanding balances by ageing bucket and receipts applied.",
     module: "finance",
-    filters: [BR, { key: "customer", label: "Customer", type: "customer" }, { key: "bucket", label: "Only customers with balance in", type: "select" }, { key: "asOf", label: "As of", type: "date" }],
+    filters: [BR, { key: "groupBy", label: "Group by", type: "select", default: "customer", options: [{ value: "customer", label: "Customer" }, { value: "route", label: "Route" }, { value: "branch", label: "Branch" }] }, { key: "customer", label: "Customer", type: "customer" }, { key: "bucket", label: "Only rows with balance in", type: "select" }, { key: "asOf", label: "As of", type: "date" }],
     async run(f, s) {
       const ids = branches(f, s);
       const settings = await getAllSettings();
@@ -388,22 +416,28 @@ export const REPORTS: ReportDef[] = [
       const labels = bucketLabels(bounds);
       const asOf = f.asOf ? new Date(f.asOf) : new Date();
       asOf.setHours(23, 59, 59, 999);
-      const invoices = await prisma.invoice.findMany({ where: { invoiceDate: { lte: asOf }, status: { not: "voided" }, ...inBranches(ids), ...(f.customer ? { outletId: f.customer } : {}) }, include: { outlet: true, arLedgerEntries: true } });
-      const byOutlet = new Map<string, { name: string; code: string; limit: number; b: number[]; receipts: number }>();
+      const invoices = await prisma.invoice.findMany({ where: { invoiceDate: { lte: asOf }, status: { not: "voided" }, ...inBranches(ids), ...(f.customer ? { outletId: f.customer } : {}) }, include: { outlet: { include: { route: true } }, branch: true, arLedgerEntries: true } });
+      const g = f.groupBy || "customer";
+      const byOutlet = new Map<string, { name: string; code: string; limit: number; b: number[]; receipts: number; seen: Set<string> }>();
       for (const inv of invoices) {
         const entries = inv.arLedgerEntries.filter((e) => e.entryDate <= asOf);
         const bal = invoiceBalance({ amount: inv.amount, arLedgerEntries: entries });
-        const cur = byOutlet.get(inv.outletId) ?? { name: inv.outlet.name, code: inv.outlet.code ?? "", limit: inv.outlet.creditLimit, b: labels.map(() => 0), receipts: 0 };
+        const key = g === "branch" ? inv.branchId : g === "route" ? inv.outlet.routeId ?? "none" : inv.outletId;
+        const cur = byOutlet.get(key) ?? { name: g === "branch" ? inv.branch.name : g === "route" ? inv.outlet.route?.name ?? "No route" : inv.outlet.name, code: g === "customer" ? inv.outlet.code ?? "" : "", limit: 0, b: labels.map(() => 0), receipts: 0, seen: new Set<string>() };
+        if (!cur.seen.has(inv.outletId)) {
+          cur.seen.add(inv.outletId);
+          cur.limit += inv.outlet.creditLimit;
+        }
         if (bal > 0) cur.b[bucketIndex(Math.floor((asOf.getTime() - inv.dueDate.getTime()) / 86400000), bounds)] += bal;
         cur.receipts += entries.filter((e) => e.type === "payment" && e.recStatus !== "reversed" && e.paymentStatus !== "pending" && e.paymentStatus !== "bounced" && asOf.getTime() - e.entryDate.getTime() <= 30 * 86400000).reduce((a, e) => a + e.amount, 0);
-        byOutlet.set(inv.outletId, cur);
+        byOutlet.set(key, cur);
       }
       let rows = [...byOutlet.entries()].map(([id, o]) => {
-        const row: Record<string, Cell> = { _href: `/supervisor/payment-reconciliation?outlet=${id}`, code: o.code, name: o.name };
+        const row: Record<string, Cell> = { _href: g === "customer" ? `/supervisor/payment-reconciliation?outlet=${id}` : null, code: o.code, name: o.name };
         labels.forEach((_, i) => (row[`b${i}`] = o.b[i]));
         row.total = o.b.reduce((a, x) => a + x, 0);
         row.limit = o.limit;
-        row.over = Number(row.total) > o.limit ? "Over limit" : "";
+        row.over = g === "customer" && Number(row.total) > o.limit ? "Over limit" : "";
         row.receipts = o.receipts;
         return row;
       });
@@ -411,7 +445,7 @@ export const REPORTS: ReportDef[] = [
       rows = rows.filter((r) => Number(r.total) > 0 || Number(r.receipts) > 0).sort((a, b) => Number(b.total) - Number(a.total));
       const totals: Record<string, Cell> = { name: "Total", total: sum(rows, (r) => Number(r.total)), receipts: sum(rows, (r) => Number(r.receipts)) };
       labels.forEach((_, i) => (totals[`b${i}`] = sum(rows, (r) => Number(r[`b${i}`]))));
-      return { columns: [{ key: "code", label: "Code" }, { key: "name", label: "Customer" }, ...labels.map((l, i) => ({ key: `b${i}`, label: l, type: "money" as const })), { key: "total", label: "Total", type: "money" }, { key: "limit", label: "Credit limit", type: "money" }, { key: "over", label: "Flag" }, { key: "receipts", label: "Receipts (30 days)", type: "money" }], rows, totals, note: `Balances as of ${iso(asOf)}.` };
+      return { columns: [{ key: "code", label: g === "customer" ? "Code" : "" }, { key: "name", label: g === "branch" ? "Branch" : g === "route" ? "Route" : "Customer" }, ...labels.map((l, i) => ({ key: `b${i}`, label: l, type: "money" as const })), { key: "total", label: "Total", type: "money" }, { key: "limit", label: "Credit limit", type: "money" }, { key: "over", label: "Flag" }, { key: "receipts", label: "Receipts (30 days)", type: "money" }], rows, totals, note: `Balances as of ${iso(asOf)}.` };
     },
   },
   // ---------------------------------------------------------------- field force

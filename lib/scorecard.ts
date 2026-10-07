@@ -38,7 +38,7 @@ export async function scorecardFor(userId: string, month: string): Promise<{ row
     prisma.salesOrder.aggregate({ where: { salespersonId: userId, orderDate: { gte: from, lte: to }, status: { in: SALE } }, _sum: { total: true }, _count: true }),
     prisma.salesOrderLine.aggregate({ where: { salesOrder: { salespersonId: userId, orderDate: { gte: from, lte: to }, status: { in: SALE } } }, _sum: { qty: true } }),
     prisma.fieldVisit.findMany({ where: { salespersonId: userId, checkinAt: { gte: from, lte: to } }, select: { visitType: true, status: true, outcome: true } }),
-    prisma.aRLedgerEntry.aggregate({ where: { collectedBy: userId, type: "payment", entryDate: { gte: from, lte: to }, recStatus: { not: "reversed" }, paymentStatus: { notIn: ["pending", "bounced"] } }, _sum: { amount: true } }),
+    prisma.aRLedgerEntry.aggregate({ where: { collectedBy: userId, type: "payment", entryDate: { gte: from, lte: to }, recStatus: { not: "reversed" }, OR: [{ paymentStatus: null }, { paymentStatus: { notIn: ["pending", "bounced"] } }] }, _sum: { amount: true } }),
     prisma.outlet.count({ where: { createdById: userId, createdAt: { gte: from, lte: to } } }),
     prisma.task.findMany({ where: { assignedToId: userId, createdAt: { gte: from, lte: to }, status: { not: "cancelled" } }, select: { status: true } }),
     prisma.target.findMany({ where: { userId, period: month } }),
