@@ -26,7 +26,7 @@ export type ModuleId = (typeof PERMISSION_MODULES)[number]["id"];
 
 export const DEFAULT_MATRIX: Record<RoleId, Record<ModuleId, Level>> = {
   admin: { master_data: "approve", purchasing: "approve", inventory: "approve", sales: "approve", van: "approve", promotions: "approve", finance: "approve", reports: "approve", export: "approve", users: "approve" },
-  branch_ops: { master_data: "view", purchasing: "edit", inventory: "edit", sales: "view", van: "edit", promotions: "none", finance: "none", reports: "view", export: "edit", users: "none" },
+  branch_ops: { master_data: "view", purchasing: "approve", inventory: "approve", sales: "view", van: "edit", promotions: "none", finance: "none", reports: "view", export: "edit", users: "none" },
   supervisor: { master_data: "view", purchasing: "view", inventory: "approve", sales: "approve", van: "approve", promotions: "approve", finance: "approve", reports: "view", export: "edit", users: "none" },
   sales_rep: { master_data: "view", purchasing: "none", inventory: "none", sales: "edit", van: "edit", promotions: "view", finance: "edit", reports: "view", export: "none", users: "none" },
   management: { master_data: "view", purchasing: "view", inventory: "view", sales: "view", van: "view", promotions: "view", finance: "view", reports: "view", export: "edit", users: "none" },
@@ -35,7 +35,7 @@ export const DEFAULT_MATRIX: Record<RoleId, Record<ModuleId, Level>> = {
 // Which application areas a role may open. Head office administrators can open everything.
 export const GROUP_ACCESS: Record<string, RoleId[]> = {
   admin: ["admin"],
-  branch: ["admin", "branch_ops"],
+  branch: ["admin", "branch_ops", "supervisor"],
   supervisor: ["admin", "supervisor"],
   sfa: ["admin", "supervisor", "sales_rep"],
   management: ["admin", "management"],

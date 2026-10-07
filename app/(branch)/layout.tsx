@@ -13,7 +13,7 @@ const navItems: NavItem[] = [
   { href: "/branch/near-expiry", label: "Near-Expiry Alerts", icon: "AlertTriangle" },
   { href: "/branch/van-loading", label: "Van Loading", icon: "Truck" },
   { href: "/branch/van-returns", label: "Van Returns", icon: "Undo2" },
-  { href: "/branch/supplier-returns", label: "Returns to Principal", icon: "Undo2" },
+  { href: "/branch/supplier-returns", label: "Returns to Central Warehouse", icon: "Undo2" },
   { href: "/branch/replenishment-requests", label: "Replenishment Requests", icon: "Inbox" },
   { href: "/branch/eod-reconciliation", label: "End-of-Day Reconciliation", icon: "CalendarCheck" },
 ];

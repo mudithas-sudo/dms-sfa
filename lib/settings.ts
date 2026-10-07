@@ -21,6 +21,7 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "nearExpiry.warningDays", group: "Inventory", label: "Near-expiry: Warning band (days to expiry)", type: "number", default: "60" },
   { key: "nearExpiry.criticalDays", group: "Inventory", label: "Near-expiry: Critical band (days to expiry)", type: "number", default: "30" },
   { key: "nearExpiry.overrides", group: "Inventory", label: "Near-expiry overrides per category (JSON)", type: "text", default: "{\"Beverages\":{\"warning\":45,\"critical\":20}}", help: "Short-life categories can warn earlier, e.g. {\"Dairy\":{\"warning\":30,\"critical\":14}}." },
+  { key: "expiry.autoMove", group: "Inventory", label: "Lots past expiry", type: "select", options: ["confirm", "auto"], default: "confirm", help: "Confirm: the warehouse confirms the move to Expired stock. Auto: it happens automatically." },
   { key: "count.tolerancePct", group: "Inventory", label: "Stock count tolerance (% of system quantity)", type: "number", default: "2" },
   { key: "gr.tolerancePct", group: "Inventory", label: "Goods receipt variance tolerance (%)", type: "number", default: "5", help: "Receipts beyond this are held for supervisor review before posting." },
   { key: "adjust.supervisorMaxValue", group: "Inventory", label: "Stock adjustment: warehouse supervisor limit (₱)", type: "number", default: "5000" },

@@ -272,6 +272,7 @@ model StockBalance {
   expiryDate  DateTime?
   qtyGood     Int        @default(0)
   qtyDamaged  Int        @default(0)
+  qtyExpired  Int        @default(0) // past expiry; excluded from sale and allocation
   qtyQuarantine Int      @default(0) // held pending quality check; excluded from available
   qtyReserved Int        @default(0) // held against confirmed-not-yet-delivered orders; available = qtyGood - qtyReserved
   goodsReceiptLineId String?
@@ -314,6 +315,8 @@ model StockTransfer {
   requestedBy     String
   approvedBy      String?
   notes           String?
+  approverRole    String?   // branch_manager | head_office — from the transfer value limit
+  reversalOfId    String?
   dispatchedAt    DateTime?
   qtyReceived     Int?
   receivedBy      String?
@@ -372,6 +375,8 @@ model SupplierReturn {
   discrepancyNote String?
   erpReference String?
   postedToErpAt DateTime?
+  erpError    String?
+  attachments String?   // JSON list of attached file names (photos / notes)
   createdAt   DateTime  @default(now())
   decidedAt   DateTime?
 }
@@ -933,6 +938,7 @@ model StockCount {
   scope        String?  // free text: category / rack / SKU set
   blind        Boolean  @default(false)
   tolerancePct Float?
+  snapshotAt   DateTime?
 
   lines StockCountLine[]
 }
@@ -1283,4 +1289,62 @@ model BiExtract {
   rowCount  Int
   status    String   @default("success")
   createdAt DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Stock movement ledger — every change to a balance, with the document behind it
+// ---------------------------------------------------------------------------
+
+model StockMovement {
+  id            String   @id @default(cuid())
+  createdAt     DateTime @default(now())
+  locationType  String   // warehouse | van
+  warehouseId   String?
+  vanId         String?
+  productId     String
+  lotNumber     String
+  bucket        String   // good | damaged | expired | quarantine | in_transit
+  qty           Int      // signed: positive adds to the bucket, negative removes
+  balanceAfter  Int?
+  type          String   // receipt | receipt_reversal | transfer_out | transfer_in | adjustment | count | reclass | van_load | van_return | van_sale | order_delivery | void_restore | central_return | opening | market_return | damage
+  refType       String?
+  refId         String?
+  refNumber     String?
+  userName      String?
+  note          String?
+
+  @@index([warehouseId, productId])
+  @@index([vanId, productId])
+  @@index([createdAt])
+}
+
+// Opening stock for a warehouse at go-live: validated line by line, approved, then locked.
+model OpeningBalanceBatch {
+  id          String   @id @default(cuid())
+  warehouseId String
+  filename    String?
+  asOfDate    DateTime
+  uploadedBy  String
+  status      String   @default("pending") // pending | approved | rejected
+  approvedBy  String?
+  decidedAt   DateTime?
+  createdAt   DateTime @default(now())
+
+  lines OpeningBalanceLine[]
+}
+
+model OpeningBalanceLine {
+  id         String              @id @default(cuid())
+  batchId    String
+  batch      OpeningBalanceBatch @relation(fields: [batchId], references: [id])
+  lineNo     Int
+  sku        String
+  productId  String?
+  category   String              @default("good") // good | bad
+  lotNumber  String?
+  expiryDate DateTime?
+  qty        Int
+  unitCost   Float?
+  result     String              @default("ok") // ok | error
+  message    String?
 }

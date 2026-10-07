@@ -173,6 +173,27 @@ export async function seedExtras(prisma: PrismaClient) {
     await prisma.biExtract.createMany({ data: ds.map(([dataset, rowCount], i) => ({ dataset, rowCount, consumer: "Company F and B BI environment", createdAt: new Date(Date.now() - (i + 1) * 3600000) })) });
   }
 
+
+  // ---- Movement ledger: opening position for the stock that existed before the ledger
+  if ((await prisma.stockMovement.count()) === 0) {
+    const rows = await prisma.stockBalance.findMany({ include: { goodsReceiptLine: { include: { goodsReceipt: true } } } });
+    const data: {
+      locationType: string; warehouseId: string | null; vanId: string | null; productId: string; lotNumber: string; bucket: string;
+      qty: number; balanceAfter: number; type: string; refType: string | null; refId: string | null; refNumber: string | null; userName: string; note: string; createdAt: Date;
+    }[] = [];
+    for (const r of rows) {
+      const gr = r.goodsReceiptLine?.goodsReceipt;
+      const base = {
+        locationType: r.locationType, warehouseId: r.warehouseId, vanId: r.vanId, productId: r.productId, lotNumber: r.lotNumber,
+        type: gr ? "receipt" : "opening", refType: gr ? "GoodsReceipt" : null, refId: gr?.id ?? null, refNumber: gr?.grNumber ?? null,
+        userName: gr?.receivedBy ?? "System", note: gr ? "Posted receipt" : "Opening position", createdAt: gr?.receivedDate ?? r.updatedAt,
+      };
+      if (r.qtyGood + r.qtyReserved > 0) data.push({ ...base, bucket: "good", qty: r.qtyGood, balanceAfter: r.qtyGood });
+      if (r.qtyDamaged > 0) data.push({ ...base, bucket: "damaged", qty: r.qtyDamaged, balanceAfter: r.qtyDamaged });
+    }
+    for (let i = 0; i < data.length; i += 500) await prisma.stockMovement.createMany({ data: data.slice(i, i + 500) });
+  }
+
   // ---- Notifications (demo)
   if ((await prisma.notification.count()) === 0) {
     await prisma.notification.createMany({

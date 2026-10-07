@@ -4,6 +4,8 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { logAudit } from "@/lib/audit";
+import { applyReclass } from "@/app/actions/inventory-actions";
 import { priceOrder, type PricedLine } from "@/lib/pricing";
 
 async function currentUserName(fallback: string) {
@@ -237,6 +239,22 @@ export async function decideApproval(formData: FormData) {
         },
       });
     }
+  }
+
+  // Standing customer discount: it applies to orders only once approved.
+  if (request.type === "fixed_discount" && request.refId) {
+    const approved = decision === "approved";
+    await prisma.pricingRule.update({
+      where: { id: request.refId },
+      data: { approvalStatus: approved ? "active" : "rejected", status: approved ? "active" : "expired", approvedBy: approved ? decider : null },
+    });
+    await logAudit("PricingRule", request.refId, approved ? "approve" : "reject", `${approved ? "Approved" : "Rejected"} standing customer discount`, { after: { approvalStatus: approved ? "active" : "rejected" } });
+  }
+
+  // Moving bad stock back to good needs supervisor approval; approving performs the move.
+  if (request.type === "stock_reclass" && request.refId && decision === "approved") {
+    const p = JSON.parse(request.payload ?? "{}") as { qty: number; from: "damaged" | "expired" | "quarantine"; to: "good"; reason: string };
+    await applyReclass(request.refId, p.qty, p.from, p.to, `${p.reason} (approved by ${decider})`, decider);
   }
 
   revalidatePath("/supervisor/approvals");
