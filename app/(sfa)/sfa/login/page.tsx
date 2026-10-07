@@ -1,30 +1,45 @@
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
-import { setUser } from "@/app/actions/session-actions";
-import { LogIn } from "lucide-react";
+import Banner from "@/components/Banner";
+import { pinSignIn } from "@/app/actions/sfa-auth-actions";
+import { KeyRound } from "lucide-react";
 
-export default async function MockLoginPage() {
+export default async function SfaLoginPage({ searchParams }: { searchParams: Promise<{ error?: string }> }) {
   const { userId } = await getSession();
-  const rep = userId ? await prisma.user.findUnique({ where: { id: userId }, include: { branch: true } }) : null;
+  const { error } = await searchParams;
+  const reps = await prisma.user.findMany({ where: { role: "sales_rep", active: true }, orderBy: { name: "asc" }, select: { id: true, name: true, branch: { select: { name: true } } } });
+  const devices = await prisma.deviceRegistration.findMany({ where: { userId: { in: reps.map((r) => r.id) } } });
+  const pin = (await prisma.appSetting.findUnique({ where: { key: "sfa.demoPin" } }))?.value ?? "1234";
 
   return (
-    <div className="flex h-full flex-col items-center justify-center space-y-6 px-2 text-center">
-      <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-blue-600 text-2xl font-bold text-white">CF</div>
-      <div>
-        <h2 className="text-lg font-semibold text-slate-900">Company F and B Field Sales</h2>
-        <p className="mt-1 text-sm text-slate-500">Secure sign-in (simulated — the role switcher above is the real session control in this prototype)</p>
+    <div className="space-y-4 px-1">
+      <div className="text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white">CF</div>
+        <h2 className="mt-2 text-base font-semibold text-slate-900">Company F and B Field Sales</h2>
+        <p className="text-xs text-slate-500">Sign in with your PIN on your registered device</p>
       </div>
-      {rep && (
-        <div className="card w-full max-w-xs p-4">
-          <p className="text-sm font-medium text-slate-900">{rep.name}</p>
-          <p className="text-xs text-slate-500">{rep.branch?.name}</p>
-          <form action={setUser.bind(null, rep.id)} className="mt-3">
-            <button type="submit" className="btn-primary flex w-full items-center justify-center gap-2">
-              <LogIn size={16} /> Continue as {rep.name.split(" ")[0]}
-            </button>
-          </form>
+      <Banner error={error} />
+      <form action={pinSignIn} className="card space-y-3 p-4">
+        <div>
+          <label className="label" htmlFor="userId">Representative</label>
+          <select className="input" id="userId" name="userId" defaultValue={userId ?? ""}>
+            {reps.map((r) => {
+              const d = devices.find((x) => x.userId === r.id);
+              return <option key={r.id} value={r.id}>{r.name} · {r.branch?.name}{d ? ` · ${d.status}` : " · no device"}</option>;
+            })}
+          </select>
         </div>
-      )}
+        <div>
+          <label className="label" htmlFor="pin">PIN</label>
+          <input className="input" id="pin" name="pin" type="password" inputMode="numeric" autoComplete="off" required />
+        </div>
+        <button className="btn-primary flex w-full items-center justify-center gap-2" type="submit"><KeyRound size={16} /> Sign in</button>
+        <ul className="list-disc space-y-0.5 pl-4 text-[11px] text-slate-500">
+          <li>The device must be registered and approved for you.</li>
+          <li>Five wrong PINs lock the account for 15 minutes; a supervisor or administrator can unlock it.</li>
+          <li>Demo PIN for every representative: <strong>{pin}</strong></li>
+        </ul>
+      </form>
     </div>
   );
 }

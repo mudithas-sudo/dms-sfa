@@ -4,14 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { recordCollection } from "@/app/actions/sfa-actions";
 import { PAYMENT_MODES } from "@/lib/payment-modes";
+import { newRef } from "@/lib/offline-queue";
 
 // Mobile collection: the amount settles the oldest invoices first; cheque and bank-transfer details are captured
 // at the point of collection so the receipt and the ledger carry them.
 export default function CollectionForm({ outlets, selected, outstanding, today }: { outlets: { id: string; name: string }[]; selected?: string; outstanding: number; today: string }) {
   const router = useRouter();
   const [method, setMethod] = useState("cash");
+  const [ref] = useState(() => newRef());
   return (
     <form action={recordCollection} className="card space-y-4 p-4">
+      <input type="hidden" name="clientRef" value={ref} />
       <div>
         <label className="label" htmlFor="outletId">Outlet</label>
         <select className="input" id="outletId" name="outletId" defaultValue={selected} onChange={(e) => router.push(`/sfa/collections/new?outlet=${e.target.value}`)}>

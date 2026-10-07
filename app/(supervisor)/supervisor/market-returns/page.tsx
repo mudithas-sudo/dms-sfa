@@ -35,11 +35,13 @@ export default async function MarketReturnsPage({ searchParams }: { searchParams
                 <td className="td font-medium text-slate-900">{r.outlet.name}</td>
                 <td className="td">{r.product.name}</td>
                 <td className="td">{r.qty}</td>
-                <td className="td text-xs text-slate-500">{r.reason}</td>
+                <td className="td text-xs text-slate-500">{r.reason.replace(/_/g, " ")}{r.signatoryName ? ` · signed by ${r.signatoryName}` : ""}{r.photoPlaceholder ? " · photo" : ""}</td>
                 <td className="td text-xs">{formatDate(r.createdAt)} by {r.capturedBy}</td>
                 <td className="td"><StatusBadge status={r.status} /></td>
                 <td className="td text-right">
-                  {r.status === "pending" ? (
+                  {r.status === "pending" && r.outsidePolicy ? (
+                    <span className="text-xs text-amber-700">Outside policy — approve in Approvals first</span>
+                  ) : r.status === "pending" ? (
                     <form action={processMarketReturn} className="flex items-center justify-end gap-2">
                       <input type="hidden" name="marketReturnId" value={r.id} />
                       <input className="input w-24 py-1 text-xs" type="number" step="0.01" min={0.01} max={r.product.unitPrice * r.qty} name="amount" defaultValue={r.product.unitPrice * r.qty} title="Credit amount" />

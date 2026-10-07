@@ -58,6 +58,8 @@ model User {
   branchScope  String? // comma-separated extra branch ids for multi-branch (regional) users
   mfaEnrolled  Boolean @default(false)
   statusEffectiveFrom DateTime?
+  pinFailures  Int     @default(0)
+  lockedUntil  DateTime?
   vanAssigned  Van?    @relation("VanAssignedUser")
 
   salesOrders       SalesOrder[]
@@ -193,6 +195,7 @@ model Product {
   shortName  String?
   sellingUnits String? // e.g. "PC,PK,CS"
   unitsPerPack Int    @default(1)
+  packMultiple Int    @default(1) // orders must be placed in multiples of this quantity
   minOrderQty Int     @default(1)
   shelfLifeDays Int?
   displayOrder Int?
@@ -552,6 +555,9 @@ model SalesOrder {
   syncedAt      DateTime?
   capturedLat   Float?
   capturedLng   Float?
+  signatoryName String?
+  signatureDeclinedReason String?
+  amendedFromDraft Boolean @default(false)
 
   lines         SalesOrderLine[]
   invoices      Invoice[]
@@ -1436,4 +1442,21 @@ model VanReconciliationLine {
   variance         Int
   outcome          String   // none | within_tolerance | shortage | excess
   resolution       String?  // approved_adjustment | explained | escalated
+}
+
+// A rep's request to correct customer master data (address, contact, outlet details) — reviewed by the supervisor.
+model CustomerChangeRequest {
+  id            String    @id @default(cuid())
+  outletId      String
+  requestedBy   String
+  field         String    // address | contact_person | phone | visit_day | channel | closed | other
+  currentValue  String?
+  proposedValue String
+  reason        String
+  photoData     String?
+  status        String    @default("pending") // pending | approved | rejected
+  decidedBy     String?
+  decisionNote  String?
+  createdAt     DateTime  @default(now())
+  decidedAt     DateTime?
 }

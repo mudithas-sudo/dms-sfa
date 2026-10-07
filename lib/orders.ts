@@ -4,6 +4,7 @@ import { priceOrder, type PricedLine, type PricingResult } from "@/lib/pricing";
 import { getAllSettings, num } from "@/lib/settings";
 import { availableOf, changeBalance, fefoLots, addToLot } from "@/lib/stock";
 import { creditDays } from "@/lib/masterdata";
+import { sellableByProduct } from "@/lib/van";
 
 // One validation / allocation / invoicing engine for every order, wherever it was entered.
 
@@ -98,6 +99,16 @@ export async function validateOrder(input: ValidationInput): Promise<{ checks: C
       : { id: "quantity", label: "Minimum order quantity", outcome: "pass", message: "All quantities meet the minimum." },
   );
 
+  // pack multiple (orders in whole packs / cases)
+  const multSev = severityOf(settings, "validation.packMultiple");
+  const badMult = input.items.filter((i) => {
+    const m = products.find((p) => p.id === i.productId)?.packMultiple ?? 1;
+    return m > 1 && i.qty % m !== 0;
+  });
+  if (badMult.length) {
+    add({ id: "multiple", label: "Pack multiple", outcome: multSev === "off" ? "pass" : multSev === "warn" ? "warn" : "block", message: `Quantity must be a multiple of the pack size: ${badMult.map((i) => { const p = products.find((x) => x.id === i.productId); return `${p?.name} (×${p?.packMultiple})`; }).join(", ")}.` });
+  }
+
   // price vs. what the device calculated
   const mismatched = Object.entries(input.devicePrices ?? {}).filter(([pid, price]) => {
     const l = lines.find((x) => x.productId === pid);
@@ -149,8 +160,7 @@ export async function validateOrder(input: ValidationInput): Promise<{ checks: C
     if (input.warehouseId) {
       avail = (await fefoLots(input.warehouseId, item.productId)).reduce((s, r) => s + availableOf(r), 0);
     } else if (input.vanId) {
-      const rows = await prisma.stockBalance.findMany({ where: { locationType: "van", vanId: input.vanId, productId: item.productId } });
-      avail = rows.reduce((s, r) => s + r.qtyGood, 0);
+      avail = (await sellableByProduct(input.vanId)).get(item.productId) ?? 0;
     } else continue;
     if (avail < item.qty) short.push(`${name} (need ${item.qty}, available ${avail})`);
   }

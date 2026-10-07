@@ -72,6 +72,10 @@ export default function ProductForm({
             <input className="input" id="unitPrice" name="unitPrice" type="number" step="0.01" defaultValue={product?.unitPrice ?? 0} />
           </div>
           <div>
+            <label className="label" htmlFor="packMultiple">Order in multiples of</label>
+            <input className="input" id="packMultiple" name="packMultiple" type="number" min={1} defaultValue={product?.packMultiple ?? 1} />
+          </div>
+          <div>
             <label className="label" htmlFor="minOrderQty">Minimum order qty</label>
             <input className="input" id="minOrderQty" name="minOrderQty" type="number" min={1} defaultValue={product?.minOrderQty ?? 1} />
           </div>

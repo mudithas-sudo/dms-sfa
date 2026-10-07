@@ -134,7 +134,7 @@ export async function createBackendOrder(formData: FormData) {
   const v = await validateOrder({ outletId, items, pricing, warehouseId: warehouse?.id ?? null, discountOverridePct: discountPct });
   // a customer who cannot be sold to stops the order outright; every other block becomes a supervisor decision
   const customerBlock = v.checks.find((c) => c.id === "customer" && c.outcome === "block");
-  const qtyBlock = v.checks.find((c) => c.id === "quantity" && c.outcome === "block");
+  const qtyBlock = v.checks.find((c) => (c.id === "quantity" || c.id === "multiple") && c.outcome === "block");
   if (customerBlock) fail(back, customerBlock.message);
   if (qtyBlock) fail(back, qtyBlock.message);
 
@@ -209,7 +209,7 @@ export async function submitDraftOrder(formData: FormData) {
   const pricing = await priceOrder(order.outletId, items);
   const warehouse = await prisma.warehouse.findFirst({ where: { branchId: order.branchId, type: "saleable", status: "active" } });
   const v = await validateOrder({ outletId: order.outletId, items, pricing, warehouseId: warehouse?.id ?? null, excludeOrderId: id });
-  const hard = v.checks.find((c) => (c.id === "customer" || c.id === "quantity") && c.outcome === "block");
+  const hard = v.checks.find((c) => (c.id === "customer" || c.id === "quantity" || c.id === "multiple") && c.outcome === "block");
   if (hard) fail(back, hard.message);
   const holds = v.checks.filter((c) => c.outcome === "block" && HOLD_TYPE[c.id]);
   await prisma.salesOrder.update({ where: { id }, data: { status: holds.length ? "on_hold" : "confirmed", validationResult: JSON.stringify(v.checks), creditHoldReason: holds.length ? holds.map((h) => h.message).join(" ") : null, total: pricing.total, subtotal: pricing.subtotal, discountTotal: pricing.discountTotal } });

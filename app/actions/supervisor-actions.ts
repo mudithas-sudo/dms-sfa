@@ -10,8 +10,9 @@ import { assertCan } from "@/lib/rbac";
 import { getAllSettings, num } from "@/lib/settings";
 import { applyReclass } from "@/app/actions/inventory-actions";
 import { completeHeldOrder, performOrderCancellation } from "@/app/actions/sales-actions";
-import { dueDateFor, nextInvoiceNumber, outletPosition } from "@/lib/orders";
+
 import { addToLot } from "@/lib/stock";
+import { completeVanSale } from "@/lib/vansale";
 import { applyChequeBounce, createCreditNote, invoiceBalance, outletBalance, postCreditNote, postFinancialDocument, recomputeInvoiceStatus } from "@/lib/finance";
 
 async function currentUserName(fallback: string) {
@@ -24,34 +25,6 @@ function fail(path: string, message: string): never {
 }
 
 const HOLD_TYPES = ["credit_limit_exception", "stock_shortage", "overdue_balance", "duplicate_order", "discount_override"];
-
-// An SFA van-sale held for an exception completes straight after approval: van stock falls, invoice and delivery are issued.
-async function completeVanSale(orderId: string) {
-  const order = await prisma.salesOrder.findUnique({ where: { id: orderId }, include: { lines: true, outlet: true } });
-  if (!order || !["draft", "on_hold"].includes(order.status)) return;
-  const rep = await prisma.user.findUnique({ where: { id: order.salespersonId } });
-  const vans = await prisma.van.findMany({ where: { branchId: order.branchId } });
-  const van = vans.find((v) => v.assignedUserId === rep?.id) ?? vans.find((v) => v.driverName === rep?.name);
-  if (van) {
-    for (const line of order.lines) {
-      const row = await prisma.stockBalance.findFirst({ where: { locationType: "van", vanId: van.id, productId: line.productId }, orderBy: { qtyGood: "desc" } });
-      if (row) await prisma.stockBalance.update({ where: { id: row.id }, data: { qtyGood: Math.max(0, row.qtyGood - line.qty) } });
-    }
-  }
-  const pos = await outletPosition(order.outletId);
-  const { seq, number } = await nextInvoiceNumber(order.branchId);
-  const invoice = await prisma.invoice.create({
-    data: { invoiceNumber: number, branchSeq: seq, salesOrderId: order.id, outletId: order.outletId, branchId: order.branchId, dueDate: dueDateFor(order.paymentTerms ?? order.outlet.paymentTerms), amount: order.total, status: "unpaid" },
-  });
-  for (const line of order.lines) {
-    await prisma.invoiceLine.create({ data: { invoiceId: invoice.id, productId: line.productId, qty: line.qty, unitPrice: line.unitPrice, lineTotal: line.lineTotal } });
-  }
-  const drCount = await prisma.deliveryReceipt.count();
-  await prisma.deliveryReceipt.create({ data: { drNumber: `DR-${String(drCount + 1).padStart(6, "0")}`, invoiceId: invoice.id, receivedBy: `${order.outlet.name} staff`, status: "delivered" } });
-  await prisma.aRLedgerEntry.create({ data: { outletId: order.outletId, invoiceId: invoice.id, type: "invoice", amount: order.total, balance: pos.outstanding + order.total, reference: invoice.invoiceNumber } });
-  await prisma.salesOrder.update({ where: { id: order.id }, data: { status: "delivered", creditHoldReason: null } });
-  await logAudit("SalesOrder", order.id, "release", `Completed ${order.orderNumber} after the exception was approved`);
-}
 
 // Put a voided order's stock back where it came from — the allocated warehouse lot or the rep's van.
 async function restoreStockForVoid(orderId: string, approver: string) {
@@ -143,7 +116,13 @@ export async function decideApproval(formData: FormData) {
         await notify({ userId: order.salespersonId, title: "Order rejected", body: `${order.orderNumber} was rejected${decisionNote ? `: ${decisionNote}` : ""}`, kind: "alert" });
       } else if (order.orderType === "van_sale") {
         const stillPending = await prisma.approvalRequest.count({ where: { salesOrderId: order.id, status: "pending" } });
-        if (stillPending === 0) await completeVanSale(order.id);
+        if (stillPending === 0) {
+          try {
+            await completeVanSale(order.id, decider);
+          } catch (e) {
+            fail(back, e instanceof Error ? e.message : "The van sale could not be completed.");
+          }
+        }
         await notify({ userId: order.salespersonId, title: "Order approved", body: `${order.orderNumber} was approved and completed`, kind: "info" });
       } else {
         await completeHeldOrder(order.id);
@@ -236,6 +215,15 @@ export async function decideApproval(formData: FormData) {
     }
   }
 
+  // --- field exceptions raised by the SFA app
+  if (request.type === "return_outside_policy" && request.refId && decision === "rejected") {
+    await prisma.marketReturn.update({ where: { id: request.refId }, data: { status: "rejected" } });
+  }
+  if (request.type === "return_outside_policy" || request.type === "out_of_route_visit") {
+    const rep = await prisma.user.findFirst({ where: { name: request.requestedBy } });
+    if (rep) await notify({ userId: rep.id, title: `${request.type === "out_of_route_visit" ? "Out-of-route visit" : "Return exception"} ${decision}`, body: decisionNote || request.reason.slice(0, 100), link: "/sfa", kind: decision === "approved" ? "info" : "alert" });
+  }
+
   // --- cheque that bounced after clearing: reverse the payments
   if (request.type === "cheque_bounce" && request.refId && request.outletId && decision === "approved") {
     const p = JSON.parse(request.payload ?? "{}") as { reason?: string };
@@ -292,6 +280,10 @@ export async function processMarketReturn(formData: FormData) {
   const marketReturnId = String(formData.get("marketReturnId"));
   const marketReturn = await prisma.marketReturn.findUniqueOrThrow({ where: { id: marketReturnId }, include: { product: true } });
   if (marketReturn.status !== "pending") redirect("/supervisor/market-returns");
+  if (marketReturn.outsidePolicy) {
+    const ok = await prisma.approvalRequest.findFirst({ where: { type: "return_outside_policy", refId: marketReturnId, status: "approved" } });
+    if (!ok) redirect(`/supervisor/market-returns?error=${encodeURIComponent("This return is outside the return policy — approve the exception in Approvals before issuing a credit note.")}`);
+  }
   const full = marketReturn.product.unitPrice * marketReturn.qty;
   const asked = Number(formData.get("amount") ?? full);
   const amount = Math.min(full, Number.isFinite(asked) && asked > 0 ? asked : full);

@@ -4,6 +4,7 @@ import { decideDevice, addApprovedHardware, retireHardware, resolveDeviceErrors 
 import { getNumberSetting } from "@/lib/settings";
 import { formatDateTime } from "@/lib/format";
 import { Smartphone, Printer } from "lucide-react";
+import { unlockUser } from "@/app/actions/sfa-auth-actions";
 
 // Admin / supervisor view of the synchronization state of every field device.
 function syncStatus(d: { status: string; lastSyncAt: Date | null; pendingItems: number; errorItems: number }, staleHours: number) {
@@ -42,6 +43,7 @@ export default async function DevicesPage() {
     getNumberSetting("sync.staleHours"),
   ]);
   const userOf = new Map(users.map((u) => [u.id, u]));
+  const locked = await prisma.user.findMany({ where: { OR: [{ lockedUntil: { gt: new Date() } }, { pinFailures: { gt: 0 } }] }, select: { id: true, name: true, pinFailures: true, lockedUntil: true } });
 
   return (
     <div className="space-y-6">
@@ -154,6 +156,19 @@ export default async function DevicesPage() {
           </div>
         ))}
       </div>
+      {locked.length > 0 && (
+        <div className="card p-5">
+          <h3 className="mb-2 text-sm font-semibold text-slate-900">Field-app accounts with failed sign-ins</h3>
+          <ul className="space-y-2 text-sm">
+            {locked.map((u) => (
+              <li key={u.id} className="flex items-center justify-between">
+                <span>{u.name} — {u.lockedUntil && u.lockedUntil > new Date() ? `locked until ${u.lockedUntil.toLocaleTimeString("en-PH")}` : `${u.pinFailures} wrong PIN(s)`}</span>
+                <form action={unlockUser}><input type="hidden" name="userId" value={u.id} /><button className="text-xs text-blue-600 hover:underline" type="submit">Unlock</button></form>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </div>
   );
 }
