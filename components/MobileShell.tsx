@@ -1,6 +1,8 @@
 import RoleSwitcher from "@/components/RoleSwitcher";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import { prisma } from "@/lib/prisma";
+import Forbidden from "@/components/Forbidden";
+import { groupAllowed } from "@/lib/rbac";
 import type { RoleId } from "@/lib/constants";
 
 export default async function MobileShell({
@@ -47,7 +49,9 @@ export default async function MobileShell({
             />
           </div>
         </div>
-        <main className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4">{children}</main>
+        <main className="flex-1 overflow-y-auto bg-slate-50 px-4 py-4">
+          {groupAllowed(role, "sfa") ? children : <Forbidden role={role} area="Field Sales (mobile)" />}
+        </main>
         <MobileBottomNav />
       </div>
     </div>

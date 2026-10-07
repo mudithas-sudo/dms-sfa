@@ -24,6 +24,8 @@ export default async function BranchesPage() {
             <tr>
               <th className="th">Name</th>
               <th className="th">Code</th>
+              <th className="th">Region</th>
+              <th className="th">Manager</th>
               <th className="th">Address</th>
               <th className="th">Outlets</th>
               <th className="th">Warehouses</th>
@@ -37,6 +39,8 @@ export default async function BranchesPage() {
               <tr key={b.id} className="hover:bg-slate-50">
                 <td className="td font-medium text-slate-900">{b.name}</td>
                 <td className="td text-xs text-slate-500">{b.code ?? "—"}</td>
+                <td className="td">{b.region ?? "—"}</td>
+                <td className="td">{b.contactPerson ?? "—"}</td>
                 <td className="td">{b.address}</td>
                 <td className="td">{b._count.outlets}</td>
                 <td className="td">{b._count.warehouses}</td>

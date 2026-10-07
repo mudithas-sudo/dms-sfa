@@ -36,6 +36,24 @@ import {
   Sparkles,
   AlertTriangle,
   Cable,
+  Settings,
+  FileText,
+  FileBarChart,
+  ClipboardCheck,
+  PackageCheck,
+  Boxes,
+  ShieldAlert,
+  Smartphone,
+  KeyRound,
+  Activity,
+  Trophy,
+  Target,
+  CircleDollarSign,
+  ListTodo,
+  Plug,
+  UserCog,
+  Gauge,
+  Bell,
   type LucideIcon,
 } from "lucide-react";
 
@@ -73,12 +91,31 @@ const ICONS: Record<string, LucideIcon> = {
   Sparkles,
   AlertTriangle,
   Cable,
+  Settings,
+  FileText,
+  FileBarChart,
+  ClipboardCheck,
+  PackageCheck,
+  Boxes,
+  ShieldAlert,
+  Smartphone,
+  KeyRound,
+  Activity,
+  Trophy,
+  Target,
+  CircleDollarSign,
+  ListTodo,
+  Plug,
+  UserCog,
+  Gauge,
+  Bell,
 };
 
 export interface NavItem {
   href: string;
   label: string;
   icon: keyof typeof ICONS;
+  section?: string; // renders a small heading above this item
 }
 
 export default function Sidebar({
@@ -106,8 +143,11 @@ export default function Sidebar({
           const active = pathname === item.href;
           const Icon = ICONS[item.icon];
           return (
+            <div key={item.href}>
+              {item.section && (
+                <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-slate-400">{item.section}</p>
+              )}
             <Link
-              key={item.href}
               href={item.href}
               className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
                 active
@@ -118,6 +158,7 @@ export default function Sidebar({
               <Icon size={18} />
               {item.label}
             </Link>
+            </div>
           );
         })}
       </nav>

@@ -2,67 +2,53 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { updateProduct } from "@/app/actions/admin-actions";
+import Banner from "@/components/Banner";
+import StatusBadge from "@/components/StatusBadge";
+import ProductForm from "@/components/admin/ProductForm";
+import { formatDateTime } from "@/lib/format";
 
-export default async function EditProductPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function EditProductPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ id: string }>;
+  searchParams: Promise<{ error?: string }>;
+}) {
   const { id } = await params;
-  const product = await prisma.product.findUnique({ where: { id } });
+  const { error } = await searchParams;
+  const [product, history] = await Promise.all([
+    prisma.product.findUnique({ where: { id } }),
+    prisma.auditLog.findMany({ where: { entity: "Product", entityId: id }, orderBy: { createdAt: "desc" }, take: 6, include: { user: true } }),
+  ]);
   if (!product) notFound();
 
   return (
-    <div className="max-w-xl space-y-4">
+    <div className="max-w-3xl space-y-4">
       <div className="flex items-center gap-2 text-sm text-slate-500">
         <Link href="/admin/products" className="hover:underline">Products</Link>
         <span>/</span>
         <span className="text-slate-900">{product.name}</span>
       </div>
       <div className="card p-6">
-        <h2 className="mb-4 text-base font-semibold text-slate-900">Edit Product</h2>
-        <form action={updateProduct} className="space-y-4">
-          <input type="hidden" name="id" value={product.id} />
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label" htmlFor="sku">SKU</label>
-              <input className="input" id="sku" name="sku" defaultValue={product.sku} required />
-            </div>
-            <div>
-              <label className="label" htmlFor="uom">UOM</label>
-              <input className="input" id="uom" name="uom" defaultValue={product.uom} required />
-            </div>
-          </div>
-          <div>
-            <label className="label" htmlFor="name">Product Name</label>
-            <input className="input" id="name" name="name" defaultValue={product.name} required />
-          </div>
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="label" htmlFor="category">Category</label>
-              <input className="input" id="category" name="category" defaultValue={product.category} required />
-            </div>
-            <div>
-              <label className="label" htmlFor="packSize">Pack Size</label>
-              <input className="input" id="packSize" name="packSize" defaultValue={product.packSize ?? ""} placeholder="e.g. 24x330ml" />
-            </div>
-          </div>
-          <div>
-            <label className="label" htmlFor="unitPrice">Unit Price (₱)</label>
-            <input className="input" id="unitPrice" name="unitPrice" type="number" step="0.01" defaultValue={product.unitPrice} />
-          </div>
-          <div className="flex items-center gap-2">
-            <input type="checkbox" id="hasExpiry" name="hasExpiry" defaultChecked={product.hasExpiry} className="h-4 w-4 rounded border-slate-300" />
-            <label htmlFor="hasExpiry" className="text-sm text-slate-700">This product has expiry / lot tracking</label>
-          </div>
-          <div>
-            <label className="label" htmlFor="status">Status</label>
-            <select className="input" id="status" name="status" defaultValue={product.status}>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-          </div>
-          <div className="flex gap-2 pt-2">
-            <button type="submit" className="btn-primary">Save Changes</button>
-            <Link href="/admin/products" className="btn-secondary">Cancel</Link>
-          </div>
-        </form>
+        <div className="mb-4 flex items-center justify-between">
+          <h2 className="text-base font-semibold text-slate-900">Product details</h2>
+          <StatusBadge status={product.status} />
+        </div>
+        <div className="mb-4">
+          <Banner error={error} />
+        </div>
+        <ProductForm action={updateProduct} product={product} submitLabel="Save local details" />
+      </div>
+      <div className="card p-5">
+        <h3 className="mb-2 text-sm font-semibold text-slate-900">Change history</h3>
+        <ul className="space-y-1.5 text-xs text-slate-600">
+          {history.map((h) => (
+            <li key={h.id}>
+              <span className="text-slate-400">{formatDateTime(h.createdAt)}</span> · {h.user.name} · {h.summary}
+            </li>
+          ))}
+          {history.length === 0 && <li className="text-slate-400">No recorded changes.</li>}
+        </ul>
       </div>
     </div>
   );

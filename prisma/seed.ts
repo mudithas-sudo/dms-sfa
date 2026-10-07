@@ -1,4 +1,5 @@
 import { PrismaClient } from "@prisma/client";
+import { seedExtras } from "./seed-extra";
 
 const prisma = new PrismaClient();
 
@@ -47,6 +48,25 @@ async function main() {
   // FK checks never see a dangling reference mid-clear.
   await prisma.user.updateMany({ data: { supervisorId: null, routeId: null } });
   await prisma.auditLog.deleteMany();
+  await prisma.notification.deleteMany();
+  await prisma.photo.deleteMany();
+  await prisma.target.deleteMany();
+  await prisma.exportLog.deleteMany();
+  await prisma.rolePermission.deleteMany();
+  await prisma.deviceRegistration.deleteMany();
+  await prisma.approvedHardware.deleteMany();
+  await prisma.integrationMessage.deleteMany();
+  await prisma.duplicateLog.deleteMany();
+  await prisma.biExtract.deleteMany();
+  await prisma.appSetting.deleteMany();
+  await prisma.financialDocument.deleteMany();
+  await prisma.scheduledReportRun.deleteMany();
+  await prisma.claimLine.deleteMany();
+  await prisma.undeliveredBalance.deleteMany();
+  await prisma.picklistLine.deleteMany();
+  await prisma.picklist.deleteMany();
+  await prisma.replenishmentLine.deleteMany();
+  await prisma.goodsReceiptAttachment.deleteMany();
   await prisma.fieldVisit.deleteMany();
   await prisma.fieldNote.deleteMany();
   await prisma.task.deleteMany();
@@ -1313,6 +1333,7 @@ async function main() {
     },
   });
 
+  await seedExtras(prisma);
   console.log("Seed complete.");
   console.log(`Branches: ${branches.length}, Outlets: ${outlets.length}, Products: ${products.length}`);
 }

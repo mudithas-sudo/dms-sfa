@@ -22,8 +22,9 @@ export default async function ProductsPage() {
             <tr>
               <th className="th">SKU</th>
               <th className="th">Name</th>
-              <th className="th">Category</th>
-              <th className="th">UOM</th>
+              <th className="th">Brand / Category</th>
+              <th className="th">UOM · Pack</th>
+              <th className="th">Min order</th>
               <th className="th">Unit Price</th>
               <th className="th">Has Expiry</th>
               <th className="th">Status</th>
@@ -35,8 +36,9 @@ export default async function ProductsPage() {
               <tr key={p.id} className="hover:bg-slate-50">
                 <td className="td font-mono text-xs text-slate-500">{p.sku}</td>
                 <td className="td font-medium text-slate-900">{p.name}</td>
-                <td className="td">{p.category}</td>
-                <td className="td">{p.uom}</td>
+                <td className="td">{p.brand ? `${p.brand} · ` : ""}{p.category}</td>
+                <td className="td">{p.uom}{p.packSize ? ` · ${p.packSize}` : ""}</td>
+                <td className="td">{p.minOrderQty}</td>
                 <td className="td">{formatCurrency(p.unitPrice)}</td>
                 <td className="td">{p.hasExpiry ? "Yes" : "No"}</td>
                 <td className="td"><StatusBadge status={p.status} /></td>

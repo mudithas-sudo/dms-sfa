@@ -21,7 +21,7 @@ const navItems: NavItem[] = [
 export default async function BranchLayout({ children }: { children: React.ReactNode }) {
   const { role, branchId, userId } = await getSession();
   return (
-    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} title="Branch / Warehouse Operations">
+    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} group="branch" title="Branch / Warehouse Operations">
       {children}
     </AppShell>
   );

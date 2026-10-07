@@ -23,7 +23,11 @@ model Branch {
   address       String
   contactPerson String?
   contactPhone  String?
+  contactEmail  String?
+  region        String?
   status        String   @default("active") // active | inactive
+  activatedAt   DateTime?
+  deactivatedAt DateTime?
   createdAt     DateTime @default(now())
 
   users               User[]
@@ -48,6 +52,12 @@ model User {
   supervisor   User?   @relation("UserSupervisor", fields: [supervisorId], references: [id])
   reports      User[]  @relation("UserSupervisor")
   active       Boolean @default(true)
+  employeeCode String? @unique
+  phone        String?
+  email        String?
+  branchScope  String? // comma-separated extra branch ids for multi-branch (regional) users
+  mfaEnrolled  Boolean @default(false)
+  statusEffectiveFrom DateTime?
   vanAssigned  Van?    @relation("VanAssignedUser")
 
   salesOrders       SalesOrder[]
@@ -65,6 +75,8 @@ model User {
 model Channel {
   id           String        @id @default(cuid())
   name         String        @unique // General Trade | Modern Trade | Key Accounts
+  code         String?       @unique
+  status       String        @default("active") // active | inactive
   outlets      Outlet[]
   pricingRules PricingRule[]
   promotions   Promotion[]
@@ -77,6 +89,7 @@ model Channel {
 model SubChannel {
   id        String  @id @default(cuid())
   name      String
+  code      String?
   channelId String
   channel   Channel @relation(fields: [channelId], references: [id])
   status    String  @default("active") // active | inactive
@@ -94,6 +107,10 @@ model Territory {
 model Route {
   id          String       @id @default(cuid())
   name        String
+  code        String?
+  visitDay    String?      // monday .. saturday
+  frequency   String       @default("weekly") // weekly | fortnightly | monthly
+  status      String       @default("active") // active | inactive
   territoryId String?
   territory   Territory?   @relation(fields: [territoryId], references: [id])
   outlets     Outlet[]
@@ -125,10 +142,29 @@ model Outlet {
   lat               Float
   lng               Float
   contactPerson     String?
+  code              String?  @unique
+  ownerName         String?
+  phone             String?
+  landline          String?
+  email             String?
+  visitDay          String?
+  paymentTerms      String   @default("credit_30") // cash | credit_15 | credit_30 | credit_45
   creditLimit       Float    @default(0)
-  status            String   @default("active") // active | inactive
-  onboardingStatus  String   @default("approved") // pending | approved | rejected
+  creditStatus      String   @default("active") // active | on_watch | on_hold | blocked
+  blockedReason     String?
+  status            String   @default("active") // active | inactive | blocked
+  onboardingStatus  String   @default("approved") // pending | approved | rejected | returned
   onboardingReason  String?
+  businessRegRef    String?
+  photoData         String?
+  proposedRoute     String?
+  proposedVisitDay  String?
+  remarks           String?
+  createdById       String?
+  approvedById      String?
+  priceListNote     String?
+  previousChannelId String?
+  channelEffectiveFrom DateTime?
   createdAt         DateTime @default(now())
 
   salesOrders   SalesOrder[]
@@ -152,7 +188,15 @@ model Product {
   category   String
   hasExpiry  Boolean  @default(true)
   unitPrice  Float
-  status     String   @default("active")
+  status     String   @default("active") // active | inactive | discontinued
+  brand      String?
+  shortName  String?
+  sellingUnits String? // e.g. "PC,PK,CS"
+  unitsPerPack Int    @default(1)
+  minOrderQty Int     @default(1)
+  shelfLifeDays Int?
+  displayOrder Int?
+  erpManaged Boolean  @default(true)
 
   stockBalances         StockBalance[]
   purchaseOrderLines    PurchaseOrderLine[]
@@ -179,6 +223,10 @@ model Product {
 model Warehouse {
   id       String @id @default(cuid())
   name     String
+  code     String? @unique
+  type     String  @default("saleable") // saleable | damaged | quarantine
+  status   String  @default("active") // active | inactive
+  address  String?
   branchId String
   branch   Branch @relation(fields: [branchId], references: [id])
 
@@ -200,6 +248,7 @@ model Van {
   driverName     String // display label; assignedUserId is the source of truth for lookups
   assignedUserId String? @unique
   assignedUser   User?   @relation("VanAssignedUser", fields: [assignedUserId], references: [id])
+  status         String  @default("active") // active | inactive
   branchId       String
   branch         Branch  @relation(fields: [branchId], references: [id])
 
@@ -223,6 +272,7 @@ model StockBalance {
   expiryDate  DateTime?
   qtyGood     Int        @default(0)
   qtyDamaged  Int        @default(0)
+  qtyQuarantine Int      @default(0) // held pending quality check; excluded from available
   qtyReserved Int        @default(0) // held against confirmed-not-yet-delivered orders; available = qtyGood - qtyReserved
   goodsReceiptLineId String?
   goodsReceiptLine   GoodsReceiptLine? @relation(fields: [goodsReceiptLineId], references: [id])
@@ -260,10 +310,15 @@ model StockTransfer {
   product         Product   @relation(fields: [productId], references: [id])
   lotNumber       String
   qty             Int
-  status          String    @default("pending") // pending | approved | rejected | completed
+  status          String    @default("pending") // pending | approved | rejected | in_transit | completed | discrepancy
   requestedBy     String
   approvedBy      String?
   notes           String?
+  dispatchedAt    DateTime?
+  qtyReceived     Int?
+  receivedBy      String?
+  receivedAt      DateTime?
+  discrepancyNote String?
   createdAt       DateTime  @default(now())
   decidedAt       DateTime?
 }
@@ -278,8 +333,10 @@ model StockAdjustment {
   lotNumber   String
   expiryDate  DateTime?
   qtyDelta    Int // positive = add, negative = remove
-  reasonCode  String // damage | shrinkage | count_correction | opening_balance | other
+  reasonCode  String // damage | expiry | count_variance | loss_theft | data_entry | sample_promo | other
   status      String    @default("pending") // pending | approved | rejected
+  approverRole String? // who must approve, from the size/value thresholds
+  attachmentNote String?
   requestedBy String
   approvedBy  String?
   notes       String?
@@ -294,6 +351,8 @@ model StockAdjustment {
 // separate "shipped" step once the goods actually leave the warehouse.
 model SupplierReturn {
   id          String    @id @default(cuid())
+  returnNumber String?  @unique
+  destination String    @default("Central Warehouse")
   warehouseId String
   warehouse   Warehouse @relation(fields: [warehouseId], references: [id])
   productId   String
@@ -301,10 +360,18 @@ model SupplierReturn {
   lotNumber   String
   qty         Int
   reason      String // expired | damaged | recalled | other
-  status      String    @default("pending") // pending | approved | rejected | shipped
+  status      String    @default("pending") // draft | pending | approved | rejected | cancelled | shipped (in transit) | received | posted_to_erp
   requestedBy String
   approvedBy  String?
   notes       String?
+  expiryDate  DateTime?
+  dispatchedAt DateTime?
+  qtyReceived Int?
+  receivedBy  String?
+  receivedAt  DateTime?
+  discrepancyNote String?
+  erpReference String?
+  postedToErpAt DateTime?
   createdAt   DateTime  @default(now())
   decidedAt   DateTime?
 }
@@ -322,7 +389,11 @@ model VanReturn {
   qty         Int
   condition   String   @default("good") // good | damaged
   reason      String?
-  status      String   @default("completed") // pending | completed
+  qtyDeclared Int?
+  qtyReceived Int?
+  varianceReason String?
+  receivedBy  String?
+  status      String   @default("completed") // initiated | received | variance_pending | closed | completed
   returnedBy  String
   createdAt   DateTime @default(now())
 }
@@ -337,10 +408,28 @@ model ReplenishmentRequest {
   productId     String
   product       Product   @relation(fields: [productId], references: [id])
   qtyRequested  Int
-  status        String    @default("pending") // pending | approved | rejected | fulfilled
+  requestNumber String?   @unique
+  requiredDate  DateTime?
+  remarks       String?
+  decisionNote  String?
+  status        String    @default("pending") // draft | pending | approved | partially_approved | rejected | fulfilled (loaded) | cancelled
   requestedBy   String
   createdAt     DateTime  @default(now())
   decidedAt     DateTime?
+
+  lines ReplenishmentLine[]
+}
+
+// One product line of a (multi-line) replenishment request.
+model ReplenishmentLine {
+  id             String               @id @default(cuid())
+  requestId      String
+  request        ReplenishmentRequest @relation(fields: [requestId], references: [id])
+  productId      String
+  qtyRequested   Int
+  qtyApproved    Int?
+  vanBalance     Int?
+  warehouseAvail Int?
 }
 
 // ---------------------------------------------------------------------------
@@ -352,7 +441,9 @@ model PurchaseOrder {
   poNumber    String   @unique
   branchId    String
   branch      Branch   @relation(fields: [branchId], references: [id])
-  status      String   @default("pending") // pending | partially_received | received | cancelled
+  status      String   @default("pending") // pending | partially_received | received | exception | cancelled
+  supplier    String?
+  exceptionReason String?
   orderDate   DateTime @default(now())
   expectedDate DateTime?
 
@@ -381,8 +472,25 @@ model GoodsReceipt {
   receivedBy      String
   hasAttachment   Boolean       @default(false)
   attachmentFilename String?
+  status          String        @default("posted") // draft | pending_review | posted | cancelled | reversed
+  reviewedBy      String?
+  varianceNote    String?
+  reversalOfId    String?
+  postedAt        DateTime?
 
-  lines GoodsReceiptLine[]
+  lines       GoodsReceiptLine[]
+  attachments GoodsReceiptAttachment[]
+}
+
+model GoodsReceiptAttachment {
+  id             String       @id @default(cuid())
+  goodsReceiptId String
+  goodsReceipt   GoodsReceipt @relation(fields: [goodsReceiptId], references: [id])
+  filename       String
+  docType        String       @default("delivery_receipt") // delivery_receipt | packing_list | damage_report | other
+  description    String?
+  uploadedBy     String
+  createdAt      DateTime     @default(now())
 }
 
 model GoodsReceiptLine {
@@ -395,6 +503,8 @@ model GoodsReceiptLine {
   qtyReceived    Int
   lotNumber      String
   expiryDate     DateTime?
+  manufacturingDate DateTime?
+  varianceReason String?
 
   stockBalances StockBalance[]
 }
@@ -421,10 +531,26 @@ model SalesOrder {
   total         Float    @default(0)
   creditHoldReason String?
   voidReason    String?
+  source        String   @default("sfa") // sfa | backend
+  orderType     String   @default("pre_sales") // pre_sales | van_sale
+  clientRef     String?  @unique // device-generated reference — a repeated submit returns the original order
+  paymentTerms  String?
+  remarks       String?
+  deliveryAddress String?
+  deliveryWindow String?
+  urgentDelivery Boolean @default(false)
+  urgentReason  String?
+  allocationStatus String @default("not_allocated") // not_allocated | fully_allocated | partially_allocated | released | dispatched
+  validationResult String? // JSON of every check outcome
+  cancelReason  String?
+  syncedAt      DateTime?
+  capturedLat   Float?
+  capturedLng   Float?
 
   lines         SalesOrderLine[]
   invoices      Invoice[]
   approvals     ApprovalRequest[]
+  picklistLines PicklistLine[]
 }
 
 model SalesOrderLine {
@@ -441,6 +567,43 @@ model SalesOrderLine {
   promotion    Promotion? @relation(fields: [promotionId], references: [id])
   reservedLotNumber String? // the FEFO-picked warehouse lot reserved for this line, for backend orders
   qtyDelivered Int?        // actual delivered qty once fulfilled — may be less than qty (partial delivery)
+  qtyBackorder Int         @default(0)
+  qtyPicked    Int?
+
+  picklistLines PicklistLine[]
+}
+
+// Warehouse picklist generated from allocated orders (single order or grouped by route/date).
+model Picklist {
+  id             String   @id @default(cuid())
+  picklistNumber String   @unique
+  branchId       String
+  status         String   @default("generated") // generated | in_progress | picked | cancelled
+  groupLabel     String?
+  generatedBy    String
+  pickedBy       String?
+  pickedAt       DateTime?
+  reprintCount   Int      @default(0)
+  createdAt      DateTime @default(now())
+
+  lines PicklistLine[]
+}
+
+model PicklistLine {
+  id               String         @id @default(cuid())
+  picklistId       String
+  picklist         Picklist       @relation(fields: [picklistId], references: [id])
+  salesOrderId     String
+  salesOrder       SalesOrder     @relation(fields: [salesOrderId], references: [id])
+  salesOrderLineId String
+  salesOrderLine   SalesOrderLine @relation(fields: [salesOrderLineId], references: [id])
+  productId        String
+  lotNumber        String?
+  expiryDate       DateTime?
+  location         String?
+  qtyToPick        Int
+  qtyPicked        Int?
+  overrideReason   String?
 }
 
 model Invoice {
@@ -455,9 +618,13 @@ model Invoice {
   invoiceDate   DateTime @default(now())
   dueDate       DateTime
   amount        Float
+  taxAmount     Float    @default(0)
+  branchSeq     Int?
   status        String   @default("unpaid") // unpaid | partially_paid | paid | overdue | voided
+  deliveryStatus String  @default("delivered") // pending_delivery | out_for_delivery | delivered | partially_delivered | redelivery_scheduled | returned
 
   lines            InvoiceLine[]
+  undelivered      UndeliveredBalance[]
   deliveryReceipts DeliveryReceipt[]
   arLedgerEntries  ARLedgerEntry[]
 }
@@ -481,8 +648,25 @@ model DeliveryReceipt {
   deliveredAt  DateTime @default(now())
   receivedBy   String
   status       String   @default("delivered") // delivered | partial | failed
+  signatoryName String?
+  signatureDataUrl String?
 
   lines DeliveryReceiptLine[]
+}
+
+// Remainder of a partially-delivered invoice — tracked until re-delivered, returned to stock or cancelled.
+model UndeliveredBalance {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id])
+  productId   String
+  qty         Int
+  reason      String?
+  status      String   @default("open") // open | redelivery_scheduled | returned_to_stock | cancelled
+  redeliveryDate DateTime?
+  resolvedBy  String?
+  resolvedAt  DateTime?
+  createdAt   DateTime @default(now())
 }
 
 // Per-line actual-delivered-vs-ordered, so a partial delivery is traceable.
@@ -503,7 +687,13 @@ model DeliveryReceiptLine {
 model PricingRule {
   id        String    @id @default(cuid())
   name      String
-  level     String // channel | customer
+  level     String // channel | customer | sku
+  kind      String    @default("pricing") // pricing | fixed_discount
+  branchId  String?   // null = all branches
+  scopeCategory String?
+  approvalStatus String @default("active") // draft | pending_approval | active | ended | rejected
+  approvedBy String?
+  remarks   String?
   channelId String?
   channel   Channel?  @relation(fields: [channelId], references: [id])
   outletId  String?
@@ -536,7 +726,22 @@ model Promotion {
   freeQty        Int?    // free units granted per qualifying line, for type = free_good
   startDate      DateTime
   endDate        DateTime
-  status         String   @default("active") // active | expired | draft
+  status         String   @default("active") // draft | approved | active | suspended | expired
+  code           String?  @unique
+  config         String?  // JSON for bundle / value-based / quantity-slab parameters
+  maxDiscountCap Float?
+  minOrderValue  Float?
+  budget         Float?
+  budgetUsed     Float    @default(0)
+  maxRedemptions Int?
+  redemptions    Int      @default(0)
+  stacking       String   @default("none") // none | with_promotions | with_fixed_discount | both
+  priority       Int      @default(0)
+  version        Int      @default(1)
+  parentId       String?
+  branchIds      String?  // comma-separated; empty = all branches
+  daysOfWeek     String?
+  approvedBy     String?
 
   salesOrderLines SalesOrderLine[]
   claims          Claim[]
@@ -550,11 +755,29 @@ model Claim {
   submittedById String
   submittedBy  User     @relation(fields: [submittedById], references: [id])
   amount       Float
-  status       String   @default("submitted") // submitted | reviewed | approved | rejected | settled
+  status       String   @default("submitted") // draft | submitted | under_review | returned | approved | rejected | settlement_pending | settled (legacy: reviewed)
   submittedAt  DateTime @default(now())
   notes        String?
+  branchId     String?
+  periodStart  DateTime?
+  periodEnd    DateTime?
+  eligibleAmount Float?
+  exceptionApproved Boolean @default(false)
+  settlementReference String?
+  documents    String?  // JSON list of attached document names
+  tradePromoStatus String? // status returned from the trade-promotion application
 
   statusHistory ClaimStatusHistory[]
+  lines         ClaimLine[]
+}
+
+model ClaimLine {
+  id           String @id @default(cuid())
+  claimId      String
+  claim        Claim  @relation(fields: [claimId], references: [id])
+  salesOrderId String
+  orderNumber  String
+  amount       Float
 }
 
 model ClaimStatusHistory {
@@ -581,7 +804,12 @@ model ApprovalRequest {
   requestedBy     String
   amount          Float
   reason          String
-  status          String   @default("pending") // pending | approved | rejected
+  branchId        String?
+  outletId        String?
+  level           Int      @default(1)
+  payload         String?  // JSON context (e.g. proposed override, return details)
+  refId           String?  // id of the related record for non-order types
+  status          String   @default("pending") // pending | approved | rejected | returned
   decidedBy       String?
   decisionNote    String?
   createdAt       DateTime @default(now())
@@ -598,13 +826,42 @@ model ARLedgerEntry {
   outlet           Outlet   @relation(fields: [outletId], references: [id])
   invoiceId        String?
   invoice          Invoice? @relation(fields: [invoiceId], references: [id])
-  type             String // invoice | payment | credit_note | void_reversal | reversal
-  method           String? // cash | cheque (only for payments)
+  type             String // invoice | payment | credit_note | debit_note | adjustment | write_off | void_reversal | reversal
+  method           String? // cash | cheque | bank_transfer | other (only for payments)
   amount           Float
   balance          Float
   entryDate        DateTime @default(now())
   reference        String?
+  chequeNumber     String?
+  chequeBank       String?
+  chequeBranch     String?
+  chequeDate       DateTime?
+  paymentStatus    String?  // pending (post-dated / uncleared) | cleared | bounced
+  recStatus        String   @default("matched") // unmatched | partially_matched | matched | cleared | reversed
+  unappliedAmount  Float    @default(0)
+  collectedBy      String?
+  clientRef        String?  @unique
+  depositStatus    String   @default("not_deposited") // not_deposited | handed_in | banked
+  depositedAt      DateTime?
   reversalRequests ApprovalRequest[]
+}
+
+// Debit note / adjustment / write-off — approved before posting to the ledger.
+model FinancialDocument {
+  id           String    @id @default(cuid())
+  docNumber    String    @unique
+  type         String    // debit_note | adjustment | write_off
+  outletId     String
+  invoiceId    String?
+  amount       Float     // always positive; type + direction decide the ledger effect
+  direction    String    @default("increase") // increase | decrease (adjustments only)
+  reason       String
+  status       String    @default("pending") // pending | approved | rejected | posted
+  requestedBy  String
+  approvedBy   String?
+  decisionNote String?
+  createdAt    DateTime  @default(now())
+  decidedAt    DateTime?
 }
 
 // Reduces an outlet's AR balance (from a market return or goodwill adjustment).
@@ -615,7 +872,10 @@ model CreditNote {
   outlet     Outlet   @relation(fields: [outletId], references: [id])
   amount     Float
   reason     String
-  status     String   @default("issued") // issued | void
+  status     String   @default("issued") // proposed | pending_approval | approved | applied | rejected | issued (legacy) | void
+  invoiceId  String?
+  approvedBy String?
+  decisionNote String?
   issuedBy   String
   issuedAt   DateTime @default(now())
 
@@ -638,6 +898,9 @@ model VanLoad {
   approvedBy  String?
   decidedAt   DateTime?
   confirmedAt DateTime? // rep's own acknowledgement of receipt, from the SFA app
+  loadNumber  String?  @unique
+  replenishmentRequestId String?
+  varianceReason String?
 
   lines VanLoadLine[]
 }
@@ -649,6 +912,8 @@ model VanLoadLine {
   productId String
   product   Product @relation(fields: [productId], references: [id])
   qty       Int
+  qtyApproved Int?
+  varianceReason String?
   lotNumber String
 }
 
@@ -664,6 +929,10 @@ model StockCount {
   countedAt    DateTime @default(now())
   status       String   @default("open") // open | pending_approval | approved | rejected | closed
   approvedBy   String?
+  type         String   @default("full") // full | cycle
+  scope        String?  // free text: category / rack / SKU set
+  blind        Boolean  @default(false)
+  tolerancePct Float?
 
   lines StockCountLine[]
 }
@@ -678,6 +947,8 @@ model StockCountLine {
   systemQty    Int
   countedQty   Int
   variance     Int
+  recountQty   Int?
+  recountReason String?
 }
 
 // ---------------------------------------------------------------------------
@@ -698,7 +969,20 @@ model FieldVisit {
   checkoutLng   Float?
   feedback      String?
   photoPlaceholder Boolean @default(false)
-  status        String    @default("in_progress") // in_progress | completed
+  status        String    @default("in_progress") // in_progress | completed | skipped
+  visitType     String    @default("planned") // planned | unplanned
+  outcome       String?   // order_taken | collection_only | no_order | outlet_closed | owner_not_available
+  noOrderReason String?
+  serviceRating Int?
+  complaint     String?
+  complaintCategory String?
+  followUp      Boolean   @default(false)
+  followUpDue   DateTime?
+  skipReason    String?
+  distanceM     Float?
+  outOfTolerance Boolean  @default(false)
+  overrideReason String?
+  mockLocation  Boolean   @default(false)
 }
 
 // Shelf audit, merchandising insight and competitor observation share the same
@@ -711,6 +995,7 @@ model FieldNote {
   salesperson   User     @relation(fields: [salespersonId], references: [id])
   type          String // shelf_audit | merchandising | competitor
   notes         String
+  data          String?  // JSON with the structured fields of the form
   photoPlaceholder Boolean @default(false)
   createdAt     DateTime @default(now())
 }
@@ -726,7 +1011,13 @@ model Task {
   outletId       String?
   outlet         Outlet?   @relation(fields: [outletId], references: [id])
   dueDate        DateTime?
-  status         String    @default("pending") // pending | completed
+  priority       String    @default("normal") // low | normal | high
+  requiresPhoto  Boolean   @default(false)
+  status         String    @default("pending") // pending (assigned) | acknowledged | in_progress | completed | not_completed | cancelled
+  notes          String?
+  notCompletedReason String?
+  acknowledgedAt DateTime?
+  startedAt      DateTime?
   createdAt      DateTime  @default(now())
   completedAt    DateTime?
 }
@@ -739,8 +1030,13 @@ model MarketReturn {
   productId    String
   product      Product     @relation(fields: [productId], references: [id])
   qty          Int
-  reason       String
+  reason       String // damaged | expired | near_expiry | wrong_item | overstock | quality_complaint
   photoPlaceholder Boolean @default(false)
+  invoiceId    String?
+  lotNumber    String?
+  signatoryName String?
+  signatureDataUrl String?
+  outsidePolicy Boolean    @default(false)
   status       String      @default("pending") // pending | processed
   capturedBy   String
   createdAt    DateTime    @default(now())
@@ -765,6 +1061,14 @@ model Attendance {
   endLng    Float?
   status    String    @default("in_progress") // in_progress | completed
   eodConfirmedAt DateTime? // rep's sign-off on the day's load/sold/returned reconciliation
+  cashExpected   Float?
+  cashDeclared   Float?
+  cashVarianceReason String?
+  startVariance  String? // on_time | late
+  clockSkewFlag  Boolean @default(false)
+  remarks        String?
+  reopenedBy     String?
+  reopenReason   String?
 }
 
 model LeaveRequest {
@@ -774,7 +1078,11 @@ model LeaveRequest {
   startDate  DateTime
   endDate    DateTime
   reason     String
-  status     String    @default("pending") // pending | approved | rejected
+  leaveType  String    @default("annual") // annual | sick | emergency
+  halfDay    Boolean   @default(false)
+  attachmentName String?
+  decisionNote String?
+  status     String    @default("pending") // pending | approved | rejected | returned | cancelled
   approvedBy String?
   createdAt  DateTime  @default(now())
   decidedAt  DateTime?
@@ -788,7 +1096,9 @@ model ExpenseRequest {
   category         String // travel | meals | fuel | other
   description      String
   receiptPlaceholder Boolean @default(false)
-  status           String    @default("pending") // pending | approved | rejected
+  expenseDate      DateTime?
+  decisionNote     String?
+  status           String    @default("pending") // pending | approved | partially_approved | rejected | paid
   approvedBy       String?
   createdAt        DateTime  @default(now())
   decidedAt        DateTime?
@@ -804,10 +1114,26 @@ model ScheduledReport {
   reportType         String // sales_summary | ar_aging | inventory_valuation | claims_status
   scheduleDescription String  // free text e.g. "Every Monday 8:00 AM"
   recipientEmails    String
-  status             String    @default("active") // active | inactive
+  status             String    @default("active") // active | inactive (paused)
+  format             String    @default("excel") // excel | pdf | both
+  filters            String?
+  frequency          String?   // daily | weekly | monthly
   lastRunAt          DateTime?
+  lastRunStatus      String?
   createdBy          String
   createdAt          DateTime  @default(now())
+
+  runs ScheduledReportRun[]
+}
+
+model ScheduledReportRun {
+  id         String          @id @default(cuid())
+  reportId   String
+  report     ScheduledReport @relation(fields: [reportId], references: [id])
+  startedAt  DateTime        @default(now())
+  status     String          // success | failed
+  rowCount   Int?
+  error      String?
 }
 
 // ---------------------------------------------------------------------------
@@ -824,5 +1150,137 @@ model AuditLog {
   summary    String
   beforeData String? // JSON-stringified snapshot, when applicable
   afterData  String? // JSON-stringified snapshot, when applicable
+  branchId   String?
+  role       String?
+  source     String?  // web | sfa
+  seq        Int      @default(autoincrement())
+  prevHash   String?  // checksum of the previous entry — the chain makes tampering evident
+  hash       String?
   createdAt  DateTime @default(now())
+}
+
+// ---------------------------------------------------------------------------
+// Platform configuration, governance, integration and reporting (proposal v2.0)
+// ---------------------------------------------------------------------------
+
+// Key/value configuration maintained by administrators (thresholds, modes, policies).
+model AppSetting {
+  key       String   @id
+  value     String
+  updatedBy String?
+  updatedAt DateTime @updatedAt
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  userId    String?
+  role      String?
+  branchId  String?
+  title     String
+  body      String
+  link      String?
+  kind      String    @default("info") // info | alert | approval
+  readAt    DateTime?
+  createdAt DateTime  @default(now())
+}
+
+model Photo {
+  id         String   @id @default(cuid())
+  linkedType String   // visit | shelf_audit | merchandising | competitor | return | task | damage | expense
+  linkedId   String?
+  photoType  String   @default("other") // shelf | display | damaged_stock | competitor | delivery_proof | outlet_front | other
+  caption    String?
+  dataUrl    String
+  outletId   String?
+  uploadedBy String
+  lat        Float?
+  lng        Float?
+  uploadStatus String @default("uploaded") // pending | uploading | uploaded | failed
+  createdAt  DateTime @default(now())
+}
+
+model Target {
+  id          String  @id @default(cuid())
+  userId      String?
+  branchId    String?
+  metric      String  // sales_value | sales_volume | visit_compliance | productive_call_rate | collection | new_customers | task_completion
+  period      String  // YYYY-MM
+  targetValue Float
+}
+
+model ExportLog {
+  id        String   @id @default(cuid())
+  userId    String
+  report    String
+  filters   String?
+  format    String
+  rowCount  Int
+  createdAt DateTime @default(now())
+}
+
+// Permission matrix, editable by administrators and enforced on the server.
+model RolePermission {
+  id     String @id @default(cuid())
+  role   String
+  module String
+  level  String // none | view | edit | approve
+
+  @@unique([role, module])
+}
+
+model DeviceRegistration {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  deviceModel     String
+  deviceId        String
+  printerModel    String?
+  status          String    @default("approved") // pending | approved | revoked
+  registeredAt    DateTime  @default(now())
+  lastSyncAt      DateTime?
+  pendingItems    Int       @default(0)
+  errorItems      Int       @default(0)
+  oldestPendingAt DateTime?
+  lastError       String?
+}
+
+model ApprovedHardware {
+  id     String @id @default(cuid())
+  kind   String // device | printer
+  model  String
+  status String @default("approved") // approved | retired
+}
+
+// Messages exchanged through the API gateway; failures sit here until corrected and resent.
+model IntegrationMessage {
+  id         String    @id @default(cuid())
+  connector  String    // erp | sfa | trade_promotion | merchandising | bi
+  direction  String    // inbound | outbound
+  docType    String
+  reference  String
+  status     String    @default("ok") // ok | error | retrying | resolved | discarded
+  error      String?
+  retryCount Int       @default(0)
+  payload    String?
+  createdAt  DateTime  @default(now())
+  resolvedAt DateTime?
+  resolvedBy String?
+  resolution String?
+}
+
+model DuplicateLog {
+  id         String    @id @default(cuid())
+  clientRef  String
+  docType    String
+  userId     String?
+  originalAt DateTime?
+  repeatAt   DateTime  @default(now())
+}
+
+model BiExtract {
+  id        String   @id @default(cuid())
+  dataset   String
+  consumer  String
+  rowCount  Int
+  status    String   @default("success")
+  createdAt DateTime @default(now())
 }

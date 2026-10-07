@@ -9,7 +9,7 @@ const navItems: NavItem[] = [
 export default async function ManagementLayout({ children }: { children: React.ReactNode }) {
   const { role, branchId, userId } = await getSession();
   return (
-    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} title="Management & Reporting">
+    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} group="management" title="Management & Reporting">
       {children}
     </AppShell>
   );

@@ -5,6 +5,7 @@ import type { NavItem } from "@/components/Sidebar";
 const navItems: NavItem[] = [
   { href: "/supervisor", label: "Overview", icon: "LayoutDashboard" },
   { href: "/supervisor/approvals", label: "Approvals", icon: "ShieldCheck" },
+  { href: "/supervisor/onboarding", label: "Customer Onboarding", icon: "UserCheck" },
   { href: "/supervisor/orders", label: "Orders (Void Requests)", icon: "AlertOctagon" },
   { href: "/supervisor/claims", label: "Claims Review", icon: "ReceiptText" },
   { href: "/supervisor/ar-aging", label: "AR Aging", icon: "Wallet" },
@@ -18,7 +19,7 @@ const navItems: NavItem[] = [
 export default async function SupervisorLayout({ children }: { children: React.ReactNode }) {
   const { role, branchId, userId } = await getSession();
   return (
-    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} title="Sales & Finance Supervisor">
+    <AppShell role={role} branchId={branchId} userId={userId} navItems={navItems} group="supervisor" title="Sales & Finance Supervisor">
       {children}
     </AppShell>
   );

@@ -4,6 +4,7 @@ import { cookies } from "next/headers";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { validateBranchId } from "@/lib/session";
+import { logAudit } from "@/lib/audit";
 import { ROLES, ROLE_COOKIE, BRANCH_COOKIE, USER_COOKIE, type RoleId } from "@/lib/constants";
 
 const COOKIE_OPTS = { path: "/", maxAge: 60 * 60 * 24 * 30 };
@@ -35,6 +36,7 @@ export async function setRole(role: RoleId) {
   store.set(ROLE_COOKIE, role, COOKIE_OPTS);
   if (resolvedBranch) store.set(BRANCH_COOKIE, resolvedBranch, COOKIE_OPTS);
   if (user) store.set(USER_COOKIE, user.id, COOKIE_OPTS);
+  if (user) await logAudit("Security", user.id, "signin", `${user.name} signed in as ${roleDef.label}`, undefined, { userId: user.id, branchId: resolvedBranch });
 
   redirect(roleDef.homePath);
 }
