@@ -194,6 +194,46 @@ export async function seedExtras(prisma: PrismaClient) {
     for (let i = 0; i < data.length; i += 500) await prisma.stockMovement.createMany({ data: data.slice(i, i + 500) });
   }
 
+
+  // ---- Orders: source / type and allocations for stock already reserved before the allocation ledger
+  const untyped = await prisma.salesOrder.count({ where: { source: "sfa", orderType: "pre_sales", validationResult: null } });
+  if (untyped > 0 && (await prisma.orderAllocation.count()) === 0) {
+    const orders = await prisma.salesOrder.findMany({ include: { lines: true, outlet: true } });
+    for (const o of orders) {
+      const backend = o.lines.some((l) => l.reservedLotNumber);
+      await prisma.salesOrder.update({
+        where: { id: o.id },
+        data: {
+          source: backend ? "backend" : "sfa",
+          orderType: backend ? "pre_sales" : "van_sale",
+          paymentTerms: o.outlet.paymentTerms,
+          allocationStatus: backend ? (o.status === "confirmed" ? "fully_allocated" : "dispatched") : "not_allocated",
+        },
+      });
+      if (!backend) continue;
+      const wh = await prisma.warehouse.findFirst({ where: { branchId: o.branchId, type: "saleable" } });
+      if (!wh) continue;
+      for (const l of o.lines) {
+        if (!l.reservedLotNumber) continue;
+        await prisma.orderAllocation.create({
+          data: { salesOrderLineId: l.id, warehouseId: wh.id, productId: l.productId, lotNumber: l.reservedLotNumber, qty: l.qtyDelivered ?? l.qty, status: o.status === "confirmed" ? "reserved" : "dispatched" },
+        });
+      }
+    }
+    // orders held for approval before the new statuses existed
+    await prisma.salesOrder.updateMany({ where: { status: "draft", creditHoldReason: { not: null } }, data: { status: "on_hold" } });
+  }
+  // Invoices: branch series numbers, tax and delivery status for the existing documents
+  const noSeq = await prisma.invoice.findMany({ where: { branchSeq: null }, include: { branch: true }, orderBy: { invoiceDate: "asc" } });
+  if (noSeq.length) {
+    const counters = new Map<string, number>();
+    for (const inv of noSeq) {
+      const n = (counters.get(inv.branchId) ?? 0) + 1;
+      counters.set(inv.branchId, n);
+      await prisma.invoice.update({ where: { id: inv.id }, data: { branchSeq: n, taxAmount: Math.round((inv.amount - inv.amount / 1.12) * 100) / 100 } });
+    }
+  }
+
   // ---- Notifications (demo)
   if ((await prisma.notification.count()) === 0) {
     await prisma.notification.createMany({

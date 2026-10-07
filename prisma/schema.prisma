@@ -1348,3 +1348,18 @@ model OpeningBalanceLine {
   result     String              @default("ok") // ok | error
   message    String?
 }
+
+// Which warehouse lots are reserved (then dispatched or released) for each order line — FEFO,
+// possibly spanning several lots. Reservations leave on-hand stock only at dispatch.
+model OrderAllocation {
+  id               String   @id @default(cuid())
+  salesOrderLineId String
+  warehouseId      String
+  productId        String
+  lotNumber        String
+  qty              Int
+  status           String   @default("reserved") // reserved | dispatched | released
+  createdAt        DateTime @default(now())
+
+  @@index([salesOrderLineId])
+}

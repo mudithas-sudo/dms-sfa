@@ -40,6 +40,8 @@ export const SETTING_DEFS: SettingDef[] = [
   { key: "credit.overdueDays", group: "Sales & credit", label: "Overdue threshold (days past due)", type: "number", default: "30" },
   { key: "credit.overdueAmount", group: "Sales & credit", label: "Overdue threshold (₱)", type: "number", default: "20000" },
   { key: "discount.supervisorMaxPct", group: "Sales & credit", label: "Discount override: supervisor limit (%)", type: "number", default: "10", help: "Above this a sales manager (head office) must approve." },
+  { key: "cancel.supervisorMaxValue", group: "Sales & credit", label: "Order cancellation / void: supervisor authority (₱)", type: "number", default: "50000", help: "Above this value a head office approver must approve." },
+  { key: "credit.supervisorMaxExcess", group: "Sales & credit", label: "Credit-limit exception: supervisor authority — excess over limit (₱)", type: "number", default: "100000", help: "A larger excess escalates to the finance / credit approver." },
   { key: "creditNote.supervisorLimit", group: "Sales & credit", label: "Credit note: supervisor approval limit (₱)", type: "number", default: "5000" },
   { key: "writeoff.approver", group: "Sales & credit", label: "Write-off approval authority", type: "select", options: ["head_office_finance"], default: "head_office_finance" },
   { key: "ageing.buckets", group: "Sales & credit", label: "Ageing buckets (days, comma separated)", type: "text", default: "30,60,90" },

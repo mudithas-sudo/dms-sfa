@@ -10,6 +10,7 @@ import { assertCan } from "@/lib/rbac";
 import { getAllSettings, getNumberSetting, num } from "@/lib/settings";
 import { sendMessage } from "@/lib/integration";
 import { ADJUST_REASONS } from "@/lib/inventory-constants";
+import { reallocateWaitingOrders } from "@/lib/orders";
 import { actorName, addToLot, availableOf, changeBalance, fefoLots, refreshPoStatus, type Bucket } from "@/lib/stock";
 
 function fail(path: string, message: string): never {
@@ -141,6 +142,8 @@ async function postReceipt(receiptId: string, poster: string) {
   const beyond = expected > 0 && (variance / expected) * 100 > num(settings, "gr.tolerancePct");
   await refreshPoStatus(gr.purchaseOrderId, beyond ? `Receipt ${gr.grNumber} varied by ${variance} unit(s) from the expected quantity` : null);
   await sendMessage({ connector: "erp", direction: "outbound", docType: "goods_receipt", reference: gr.grNumber, payload: { po: gr.purchaseOrder.poNumber, warehouse: warehouse.name } });
+  // new stock can unblock orders that were waiting for it
+  await reallocateWaitingOrders(warehouse.branchId);
   await logAudit("GoodsReceipt", gr.id, "post", `Posted receipt ${gr.grNumber} against ${gr.purchaseOrder.poNumber} into ${warehouse.name}`, { after: { lines: gr.lines.map((l) => ({ sku: l.productId, lot: l.lotNumber, qty: l.qtyReceived })) } }, { branchId: warehouse.branchId });
 }
 
