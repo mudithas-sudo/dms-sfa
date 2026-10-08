@@ -46,7 +46,7 @@ export default async function SupervisorKeyAccountsPage() {
       <div className="card overflow-x-auto">
         <h3 className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">Recent key-account activity</h3>
         <table className="w-full">
-          <thead className="bg-slate-50"><tr><th className="th">When</th><th className="th">Manager</th><th className="th">Account</th><th className="th">Activity</th><th className="th">Outcome</th><th className="th">Next action</th></tr></thead>
+          <thead className="bg-slate-50"><tr><th className="th">When</th><th className="th">Logged by</th><th className="th">Account</th><th className="th">Activity</th><th className="th">Outcome</th><th className="th">Next action</th></tr></thead>
           <tbody className="divide-y divide-slate-100">
             {acts.map((a) => (
               <tr key={a.id}><td className="td text-xs">{formatDate(a.createdAt)}</td><td className="td">{uname.get(a.userId)}</td><td className="td">{aname.get(a.outletId)}</td><td className="td text-xs">{KA_ACTIVITY_TYPES[a.type]}<p className="text-slate-500">{a.summary}</p></td><td className="td text-xs">{a.outcome ?? "—"}</td><td className="td text-xs">{a.nextAction ? `${a.nextAction}${a.nextDue ? ` (${formatDate(a.nextDue)})` : ""} · ${a.status}` : "—"}</td></tr>
