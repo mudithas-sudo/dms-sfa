@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, ShoppingCart, Truck, Wallet, MapPin, Briefcase, ListChecks } from "lucide-react";
+import { Home, ShoppingCart, Truck, Wallet, MapPin } from "lucide-react";
 
 const items = [
   { href: "/sfa", label: "Home", icon: Home },
@@ -12,17 +12,9 @@ const items = [
   { href: "/sfa/visit/new", label: "Visit", icon: MapPin },
 ];
 
-const kaItems = [
-  { href: "/sfa/key-accounts", label: "Accounts", icon: Briefcase },
-  { href: "/sfa/key-accounts/actions", label: "Actions", icon: ListChecks },
-  { href: "/sfa/order/new", label: "Order", icon: ShoppingCart },
-  { href: "/sfa/collections/new", label: "Collect", icon: Wallet },
-  { href: "/sfa/tasks", label: "Tasks", icon: MapPin },
-];
-
-export default function MobileBottomNav({ role }: { role?: string }) {
+export default function MobileBottomNav() {
   const pathname = usePathname();
-  const list = role === "key_account" ? kaItems : items;
+  const list = items;
   // The most specific entry that matches wins, so /sfa/key-accounts/actions does not also light up /sfa/key-accounts.
   const current = [...list].sort((a, b) => b.href.length - a.href.length).find((i) => (i.href === "/sfa" ? pathname === "/sfa" : pathname === i.href || pathname.startsWith(`${i.href}/`)))?.href;
 

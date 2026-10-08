@@ -326,16 +326,9 @@ export async function seedExtras(prisma: PrismaClient) {
   const poNoRef = await prisma.purchaseOrder.findMany({ where: { erpReference: null, source: "erp" } });
   for (const po of poNoRef) await prisma.purchaseOrder.update({ where: { id: po.id }, data: { erpReference: `ERP-${po.poNumber.replace("PO-", "")}` } });
 
-  // ---- Key-account managers (one per branch) and a few logged activities
-  if ((await prisma.user.count({ where: { role: "key_account" } })) === 0) {
-    const kaBranches = await prisma.branch.findMany({ orderBy: { name: "asc" } });
-    for (const b of kaBranches) {
-      const sup = await prisma.user.findFirst({ where: { role: "supervisor", branchId: b.id } });
-      await prisma.user.create({ data: { name: `Key Account Manager — ${b.name.replace(" Branch", "")}`, role: "key_account", branchId: b.id, supervisorId: sup?.id, employeeCode: `KAM-${b.code ?? b.name.slice(0, 3).toUpperCase()}` } });
-    }
-  }
+  // ---- Key-account activities, logged by each branch's supervisor
   if ((await prisma.keyAccountActivity.count()) === 0) {
-    const kam = await prisma.user.findMany({ where: { role: "key_account" } });
+    const kam = await prisma.user.findMany({ where: { role: "supervisor" } });
     const kaChannel = await prisma.channel.findFirst({ where: { name: { contains: "Key" } } });
     for (const u of kam) {
       const accts = kaChannel ? await prisma.outlet.findMany({ where: { channelId: kaChannel.id, branchId: u.branchId ?? undefined, status: "active" }, take: 3 }) : [];

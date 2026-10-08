@@ -1,5 +1,4 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import Banner from "@/components/Banner";
@@ -8,7 +7,7 @@ import SfaSupervisorHome from "@/components/SfaSupervisorHome";
 import { daysFromNow, formatCurrency, formatDateTime } from "@/lib/format";
 import { dayStart } from "@/lib/van";
 import { scorecardFor } from "@/lib/scorecard";
-import { ShoppingCart, Wallet, MapPin, ChevronRight, UserPlus, ClipboardList, CheckSquare, Calendar, Navigation, ClipboardEdit, Sun, Trophy, FileBarChart, RefreshCw, Undo2 } from "lucide-react";
+import { Briefcase, ShoppingCart, Wallet, MapPin, ChevronRight, UserPlus, ClipboardList, CheckSquare, Calendar, Navigation, ClipboardEdit, Sun, Trophy, FileBarChart, RefreshCw, Undo2 } from "lucide-react";
 
 const QUICK = [
   { href: "/sfa/visit/new", label: "Start visit", icon: MapPin },
@@ -21,6 +20,7 @@ const MORE_LINKS = [
   { href: "/sfa/route", label: "Beat Plan", icon: Navigation },
   { href: "/sfa/nearby", label: "Nearby", icon: MapPin },
   { href: "/sfa/customers/new", label: "New Customer", icon: UserPlus },
+  { href: "/sfa/key-accounts", label: "Key Accounts", icon: Briefcase },
   { href: "/sfa/orders", label: "Orders", icon: ClipboardList },
   { href: "/sfa/field-notes/new", label: "Field Forms", icon: ClipboardEdit },
   { href: "/sfa/tasks", label: "My Tasks", icon: CheckSquare },
@@ -35,7 +35,6 @@ export default async function SfaHomePage({ searchParams }: { searchParams: Prom
   const { userId, branchId, role } = await getSession();
   if (!userId || !branchId) return <p className="text-sm text-slate-500">No rep selected.</p>;
   const { error, notice } = await searchParams;
-  if (role === "key_account") redirect("/sfa/key-accounts");
   if (role === "supervisor" || role === "admin") {
     const me = await prisma.user.findUnique({ where: { id: userId } });
     return (

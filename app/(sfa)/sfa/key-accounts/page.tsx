@@ -7,11 +7,11 @@ import { prisma } from "@/lib/prisma";
 
 const DOT = { good: "bg-emerald-500", watch: "bg-amber-500", risk: "bg-rose-500" };
 
-// The key-account manager's home: every key account with its health, and what needs attention first.
+// Key accounts of the branch with their health, and what needs attention first — for the salesman and the supervisor.
 export default async function KeyAccountsHome({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
-  const { branchId, userId, role } = await getSession();
+  const { branchId, role } = await getSession();
   const { error, notice } = await searchParams;
-  const me = userId ? await prisma.user.findUnique({ where: { id: userId } }) : null;
+  const branch = branchId ? await prisma.branch.findUnique({ where: { id: branchId } }) : null;
   const accounts = await keyAccountHealth(role === "admin" ? null : branchId ? [branchId] : null);
   const sorted = [...accounts].sort((a, b) => ({ risk: 0, watch: 1, good: 2 })[a.flag] - ({ risk: 0, watch: 1, good: 2 })[b.flag] || b.balance - a.balance);
   const total = (f: (a: (typeof accounts)[number]) => number) => accounts.reduce((s, a) => s + f(a), 0);
@@ -20,8 +20,8 @@ export default async function KeyAccountsHome({ searchParams }: { searchParams: 
     <div className="space-y-4">
       <Banner error={error} notice={notice} />
       <div className="card p-4">
-        <p className="text-xs text-slate-500">Key account manager</p>
-        <p className="text-lg font-semibold text-slate-900">{me?.name ?? "—"}</p>
+        <p className="text-xs text-slate-500">Key accounts</p>
+        <p className="text-lg font-semibold text-slate-900">{branch?.name ?? "All branches"}</p>
         <div className="mt-3 grid grid-cols-2 gap-2 text-center">
           <div className="rounded-lg bg-blue-50 p-2"><p className="text-base font-semibold text-blue-700">{accounts.length}</p><p className="text-[10px] text-blue-500">Key accounts</p></div>
           <div className="rounded-lg bg-emerald-50 p-2"><p className="text-base font-semibold text-emerald-700">{formatCurrency(total((a) => a.sales30))}</p><p className="text-[10px] text-emerald-600">Sales, last 30 days</p></div>

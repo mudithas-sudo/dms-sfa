@@ -50,6 +50,7 @@ export default async function SfaSupervisorHome({ branchId, name }: { branchId: 
         <Link href="/supervisor/requests" className="flex justify-between py-1 text-slate-700"><span>🗓 Leave requests waiting</span><span>{requests}</span></Link>
         <Link href="/supervisor/coverage" className="flex justify-between py-1 text-slate-700"><span>📍 Coverage &amp; call monitoring</span><span>→</span></Link>
         <Link href="/supervisor/tasks" className="flex justify-between py-1 text-slate-700"><span>📋 Assign a task</span><span>→</span></Link>
+        <Link href="/sfa/key-accounts" className="flex justify-between py-1 text-slate-700"><span>💼 Key accounts &amp; activities</span><span>→</span></Link>
       </div>
     </div>
   );

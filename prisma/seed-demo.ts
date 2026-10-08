@@ -468,8 +468,42 @@ export async function seedDemo(prisma: PrismaClient) {
     }
   }
 
+  // ---------------------------------------------------------------- 9a. Routes belong to one branch
+  {
+    const stops = await prisma.routeStop.findMany({ include: { outlet: true, route: { include: { reps: true } } } });
+    const shared = stops.some((st) => st.route.reps.some((r) => r.branchId && r.branchId !== st.outlet.branchId));
+    if (shared) {
+      // the base seed shares five routes between the three branches; give each representative a route of their own branch
+      const terr = await prisma.territory.findMany({ orderBy: { name: "asc" } });
+      const oldIds = (await prisma.route.findMany({ select: { id: true } })).map((r) => r.id);
+      await prisma.routeStop.deleteMany();
+      for (const b of branches) {
+        const reps = users.filter((u) => u.role === "sales_rep" && u.branchId === b.id);
+        const outlets = await prisma.outlet.findMany({ where: { branchId: b.id, status: "active" }, orderBy: { code: "asc" } });
+        const name = b.name.replace(" Branch", "");
+        const territory = terr.find((t) => t.name.startsWith(name)) ?? null;
+        const code = (b.code ?? name.slice(0, 3)).toUpperCase();
+        const days = ["monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+        for (let i = 0; i < reps.length; i++) {
+          const route = await prisma.route.create({ data: { name: `${name} Route ${i + 1}`, code: `${code}-R${i + 1}`, visitDay: days[i % days.length], frequency: "weekly", status: "active", territoryId: territory?.id } });
+          await prisma.user.update({ where: { id: reps[i].id }, data: { routeId: route.id } });
+          const mine = outlets.filter((_, k) => k % reps.length === i);
+          for (let k = 0; k < mine.length; k++) {
+            await prisma.routeStop.create({ data: { routeId: route.id, outletId: mine[k].id, sequence: k + 1 } });
+            await prisma.outlet.update({ where: { id: mine[k].id }, data: { routeId: route.id, visitDay: null } });
+          }
+        }
+      }
+      await prisma.user.updateMany({ where: { routeId: { in: oldIds } }, data: { routeId: null } });
+      await prisma.outlet.updateMany({ where: { routeId: { in: oldIds } }, data: { routeId: null } });
+      await prisma.route.deleteMany({ where: { id: { in: oldIds } } });
+    }
+  }
+
   // ---------------------------------------------------------------- 9b. Today in the field, and stock approaching expiry
-  const todayStart = dayStart();
+  // the app works out "today" on its server clock (UTC on Vercel), so the demo day is anchored to UTC midnight
+  const now0 = new Date();
+  const todayStart = new Date(Date.UTC(now0.getUTCFullYear(), now0.getUTCMonth(), now0.getUTCDate()));
   if ((await prisma.attendance.count({ where: { dayDate: todayStart } })) === 0) {
     const reps = users.filter((u) => u.role === "sales_rep");
     const outcomes = ["order_taken", "collection_only", "order_taken", "no_order"];
@@ -479,7 +513,7 @@ export async function seedDemo(prisma: PrismaClient) {
       const first = stops[0]?.outlet;
       const start = new Date(todayStart.getTime() + (8 * 60 + 2 + ri * 4) * 60000);
       await prisma.attendance.create({ data: { userId: rep.id, dayDate: todayStart, startAt: start, startLat: first?.lat ?? 14.6, startLng: first?.lng ?? 121, status: "in_progress", startVariance: ri % 5 === 4 ? "late" : "on_time" } });
-      for (let si = 0; si < Math.min(stops.length, 3); si++) {
+      for (let si = 0; si < Math.min(Math.max(1, stops.length - 2), 2); si++) {
         const o = stops[si].outlet;
         const checkin = new Date(todayStart.getTime() + (8 * 60 + 40 + si * 75 + ri * 3) * 60000);
         const outcome = outcomes[(ri + si) % outcomes.length];

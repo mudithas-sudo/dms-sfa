@@ -6,7 +6,7 @@ import { KA_ACTIVITY_TYPES, keyAccountHealth } from "@/lib/key-accounts";
 
 const DOT = { good: "bg-emerald-500", watch: "bg-amber-500", risk: "bg-rose-500" };
 
-// Supervisor and head-office oversight of the key accounts and the managers working them.
+// Supervisor and head-office oversight of the key accounts and the activity logged against them.
 export default async function SupervisorKeyAccountsPage() {
   const { branchId, role } = await getSession();
   const scope = role === "admin" || !branchId ? null : [branchId];
@@ -22,7 +22,7 @@ export default async function SupervisorKeyAccountsPage() {
     <div className="space-y-5">
       <div>
         <h2 className="text-base font-semibold text-slate-900">Key Accounts</h2>
-        <p className="text-xs text-slate-500">Accounts in the Key Accounts channel with a health flag, and the activity the key-account managers have logged. An account is flagged when credit, overdue balance, ordering, sales trend or contact slips.</p>
+        <p className="text-xs text-slate-500">Accounts in the Key Accounts channel with a health flag, and the activity logged by the salesmen and supervisors. An account is flagged when credit, overdue balance, ordering, sales trend or contact slips.</p>
       </div>
       <div className="card overflow-x-auto">
         <table className="w-full">
@@ -51,7 +51,7 @@ export default async function SupervisorKeyAccountsPage() {
             {acts.map((a) => (
               <tr key={a.id}><td className="td text-xs">{formatDate(a.createdAt)}</td><td className="td">{uname.get(a.userId)}</td><td className="td">{aname.get(a.outletId)}</td><td className="td text-xs">{KA_ACTIVITY_TYPES[a.type]}<p className="text-slate-500">{a.summary}</p></td><td className="td text-xs">{a.outcome ?? "—"}</td><td className="td text-xs">{a.nextAction ? `${a.nextAction}${a.nextDue ? ` (${formatDate(a.nextDue)})` : ""} · ${a.status}` : "—"}</td></tr>
             ))}
-            {acts.length === 0 && <tr><td className="td text-slate-400" colSpan={6}>No activity logged yet. <Link className="text-blue-600 underline" href="/sfa/key-accounts">Open the key-account app</Link></td></tr>}
+            {acts.length === 0 && <tr><td className="td text-slate-400" colSpan={6}>No activity logged yet. <Link className="text-blue-600 underline" href="/sfa/key-accounts">Open the key accounts on the mobile app</Link></td></tr>}
           </tbody>
         </table>
       </div>

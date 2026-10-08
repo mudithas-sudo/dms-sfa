@@ -3,7 +3,6 @@ export const ROLES = [
   { id: "branch_ops", label: "Branch / Warehouse Operations", homePath: "/branch" },
   { id: "supervisor", label: "Sales & Finance Supervisor", homePath: "/supervisor" },
   { id: "sales_rep", label: "Field Sales Representative", homePath: "/sfa" },
-  { id: "key_account", label: "Key Account Manager", homePath: "/sfa/key-accounts" },
   { id: "management", label: "Management & Reporting", homePath: "/management" },
 ] as const;
 

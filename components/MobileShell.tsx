@@ -57,7 +57,7 @@ export default async function MobileShell({
           <ScrollToTop />
           {groupAllowed(role, "sfa") ? children : <Forbidden role={role} area="Field Sales (mobile)" />}
         </main>
-        <MobileBottomNav role={role} />
+        <MobileBottomNav />
       </div>
     </div>
   );
