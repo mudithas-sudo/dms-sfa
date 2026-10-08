@@ -243,8 +243,9 @@ export async function seedDemo(prisma: PrismaClient) {
     const base = await prisma.financialDocument.count();
     const debit = await prisma.financialDocument.create({ data: { docNumber: `DN-${pad(base + 1, 5)}`, type: "debit_note", outletId: o.id, amount: 640, reason: "Late-payment charge per the credit agreement", requestedBy: sup?.name ?? "Supervisor" } });
     await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: debit.id, outletId: o.id, branchId: o.branchId, requestedBy: sup?.name ?? "Supervisor", amount: 640, reason: `${debit.docNumber} — debit note for ${o.name}: late-payment charge per the credit agreement` } });
-    const adj = await prisma.financialDocument.create({ data: { docNumber: `ADJ-${pad(base + 2, 5)}`, type: "adjustment", direction: "decrease", outletId: outletsAll[14].id, amount: 275, reason: "Rounding difference agreed with the customer", requestedBy: sup?.name ?? "Supervisor" } });
-    await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: adj.id, outletId: outletsAll[14].id, branchId: outletsAll[14].branchId, requestedBy: sup?.name ?? "Supervisor", amount: 275, reason: `${adj.docNumber} — adjustment (decrease) for ${outletsAll[14].name}: rounding difference agreed with the customer` } });
+    const supAdj = users.find((u) => u.role === "supervisor" && u.branchId === outletsAll[14].branchId);
+    const adj = await prisma.financialDocument.create({ data: { docNumber: `ADJ-${pad(base + 2, 5)}`, type: "adjustment", direction: "decrease", outletId: outletsAll[14].id, amount: 275, reason: "Rounding difference agreed with the customer", requestedBy: supAdj?.name ?? "Supervisor" } });
+    await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: adj.id, outletId: outletsAll[14].id, branchId: outletsAll[14].branchId, requestedBy: supAdj?.name ?? "Supervisor", amount: 275, reason: `${adj.docNumber} — adjustment (decrease) for ${outletsAll[14].name}: rounding difference agreed with the customer` } });
   }
 
   // ---------------------------------------------------------------- 5. Tasks, leave, expenses, customer change requests
@@ -464,6 +465,34 @@ export async function seedDemo(prisma: PrismaClient) {
     for (let i = 0; i < receipts.length; i++) {
       const [filename, docType, description] = docs[i % docs.length];
       await prisma.goodsReceiptAttachment.create({ data: { goodsReceiptId: receipts[i].id, filename, docType, description, uploadedBy: users.find((u) => u.role === "branch_ops")?.name ?? "Branch Ops" } });
+    }
+  }
+
+  // ---------------------------------------------------------------- 9b. Today in the field, and stock approaching expiry
+  const todayStart = dayStart();
+  if ((await prisma.attendance.count({ where: { dayDate: todayStart } })) === 0) {
+    const reps = users.filter((u) => u.role === "sales_rep");
+    const outcomes = ["order_taken", "collection_only", "order_taken", "no_order"];
+    for (let ri = 0; ri < reps.length; ri++) {
+      const rep = reps[ri];
+      const stops = rep.routeId ? await prisma.routeStop.findMany({ where: { routeId: rep.routeId }, include: { outlet: true }, orderBy: { sequence: "asc" }, take: 4 }) : [];
+      const first = stops[0]?.outlet;
+      const start = new Date(todayStart.getTime() + (8 * 60 + 2 + ri * 4) * 60000);
+      await prisma.attendance.create({ data: { userId: rep.id, dayDate: todayStart, startAt: start, startLat: first?.lat ?? 14.6, startLng: first?.lng ?? 121, status: "in_progress", startVariance: ri % 5 === 4 ? "late" : "on_time" } });
+      for (let si = 0; si < Math.min(stops.length, 3); si++) {
+        const o = stops[si].outlet;
+        const checkin = new Date(todayStart.getTime() + (8 * 60 + 40 + si * 75 + ri * 3) * 60000);
+        const outcome = outcomes[(ri + si) % outcomes.length];
+        await prisma.fieldVisit.create({ data: { outletId: o.id, salespersonId: rep.id, checkinAt: checkin, checkinLat: o.lat ?? 14.6, checkinLng: o.lng ?? 121, checkoutAt: new Date(checkin.getTime() + (18 + si * 4) * 60000), checkoutLat: o.lat ?? 14.6, checkoutLng: o.lng ?? 121, status: "completed", visitType: "planned", outcome, noOrderReason: outcome === "no_order" ? "Well stocked this week" : null, serviceRating: 4 + ((ri + si) % 2), distanceM: 12 + si * 7 } });
+      }
+    }
+  }
+  if ((await prisma.stockBalance.count({ where: { locationType: "warehouse", qtyGood: { gt: 0 }, expiryDate: { gte: new Date(), lte: daysFromNow(60) } } })) < 8) {
+    // lots drifting towards expiry: two in the critical band and two in the warning band at every branch
+    const days = [11, 23, 38, 52];
+    for (const wh of warehouses) {
+      const lots = await prisma.stockBalance.findMany({ where: { warehouseId: wh.id, locationType: "warehouse", qtyGood: { gt: 0 }, qtyReserved: 0 }, orderBy: { lotNumber: "asc" }, skip: 14, take: 4 });
+      for (let i = 0; i < lots.length; i++) await prisma.stockBalance.update({ where: { id: lots[i].id }, data: { expiryDate: daysFromNow(days[i]) } });
     }
   }
 
