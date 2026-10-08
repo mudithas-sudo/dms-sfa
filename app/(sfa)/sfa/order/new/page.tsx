@@ -9,19 +9,21 @@ export default async function NewOrderPage({ searchParams }: { searchParams: Pro
   const now = new Date();
 
   const [outlets, products, promos, draftOrder] = await Promise.all([
-    branchId ? prisma.outlet.findMany({ where: { branchId, status: "active", onboardingStatus: "approved" }, orderBy: { name: "asc" }, select: { id: true, name: true } }) : Promise.resolve([]),
+    branchId ? prisma.outlet.findMany({ where: { branchId, status: "active", onboardingStatus: "approved" }, orderBy: { name: "asc" }, select: { id: true, name: true, channelId: true } }) : Promise.resolve([]),
     prisma.product.findMany({ where: { status: "active" }, orderBy: [{ category: "asc" }, { name: "asc" }], select: { id: true, name: true, sku: true, brand: true, category: true, unitPrice: true, unitsPerPack: true, packMultiple: true, minOrderQty: true } }),
     prisma.promotion.findMany({ where: { status: "active", startDate: { lte: now }, endDate: { gte: now } } }),
     draft ? prisma.salesOrder.findFirst({ where: { id: draft, status: "draft", salespersonId: userId ?? "" }, include: { lines: true } }) : null,
   ]);
 
-  const labels: Record<string, string> = {};
+  // An offer is shown only to customers it applies to, so each label carries the channel it is limited to (if any).
+  const labels: Record<string, { text: string; channelId: string | null }[]> = {};
+  const add = (productId: string, text: string, channelId: string | null) => (labels[productId] ??= []).push({ text, channelId });
   const pname = (id: string) => products.find((p) => p.id === id)?.name ?? "";
   for (const p of promos) {
     const text = promoSummary(p, pname);
-    if (p.productId) labels[p.productId] = text;
-    else if (p.type === "bundle") for (const i of (JSON.parse(p.config ?? "{}") as { items?: { productId: string }[] }).items ?? []) labels[i.productId] = `${p.name}: ${text}`;
-    else if (p.type === "qty_slab" || p.type === "volume_discount") products.forEach((x) => (labels[x.id] ??= text));
+    if (p.productId) add(p.productId, text, p.channelId);
+    else if (p.type === "bundle") for (const i of (JSON.parse(p.config ?? "{}") as { items?: { productId: string }[] }).items ?? []) add(i.productId, `${p.name}: ${text}`, p.channelId);
+    else if (p.type === "qty_slab" || p.type === "volume_discount") products.forEach((x) => add(x.id, text, p.channelId));
   }
 
   return (

@@ -86,7 +86,7 @@ export async function previewFieldOrder(outletId: string, items: FieldItem[], or
   const v = await validateOrder({ outletId, items: clean, pricing, warehouseId, vanId, discountOverridePct: overridePct });
   return {
     checks: v.checks as Check[],
-    lines: pricing.lines.map((l) => ({ productId: l.productId, qty: l.qty, unitPrice: l.unitPrice, discount: l.discount, lineTotal: l.lineTotal, promos: l.promoNames ?? [], free: l.freeQty ?? 0 })),
+    lines: pricing.lines.map((l) => ({ productId: l.productId, qty: l.qty, unitPrice: l.unitPrice, discount: l.discount, lineTotal: l.lineTotal, promos: [...(l.ruleName ? [l.ruleName] : []), ...(l.promoNames ?? [])], free: l.freeQty ?? 0 })),
     subtotal: pricing.subtotal, discountTotal: pricing.discountTotal, total: pricing.total, hints: pricing.hints,
     orderPromos: pricing.orderPromos.map((o) => o.name),
   };

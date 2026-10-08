@@ -20,11 +20,13 @@ interface Product {
 interface Outlet {
   id: string;
   name: string;
+  channelId: string | null;
 }
+type PromoLabels = Record<string, { text: string; channelId: string | null }[]>;
 type Ctx = NonNullable<Awaited<ReturnType<typeof fieldOrderContext>>>;
 type Preview = Awaited<ReturnType<typeof previewFieldOrder>>;
 
-const peso = (n: number) => `₱${n.toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const peso = (n: number) => `${n < 0 ? "−" : ""}₱${Math.abs(n).toLocaleString("en-PH", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 const TONE = { pass: "text-emerald-700", warn: "text-amber-700", block: "text-rose-700" } as const;
 const ICON = { pass: "✓", warn: "!", block: "✕" } as const;
 
@@ -35,7 +37,7 @@ export default function FieldOrderForm({
 }: {
   outlets: Outlet[];
   products: Product[];
-  promoLabels: Record<string, string>;
+  promoLabels: PromoLabels;
   defaultOutletId?: string;
   draft?: { id: string; outletId: string; orderType: string; items: { productId: string; qty: number }[]; remarks: string | null; clientRef: string | null } | null;
 }) {
@@ -104,10 +106,15 @@ export default function FieldOrderForm({
   const busy = items.length > 0 && result?.key !== key;
   const lineOf = (id: string) => preview?.lines.find((l) => l.productId === id);
 
+  // offers are shown only when they apply to the selected customer's channel
+  const channelId = outlets.find((o) => o.id === outletId)?.channelId ?? null;
+  const labelOf = (productId: string) => promoLabels[productId]?.find((l) => !l.channelId || l.channelId === channelId)?.text;
   const shown = products.filter(
-    (p) => (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) && (!brand || p.brand === brand) && (!category || p.category === category) && (!promoOnly || promoLabels[p.id]),
+    (p) => (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) && (!brand || p.brand === brand) && (!category || p.category === category) && (!promoOnly || labelOf(p.id)),
   );
   const setBase = (id: string, n: number) => setQty((s) => ({ ...s, [id]: Math.max(0, Math.floor(n || 0)) }));
+  // the +/− buttons add to the latest value, so two quick taps in a row both count
+  const bump = (id: string, delta: number) => setQty((s) => ({ ...s, [id]: Math.max(0, (s[id] ?? 0) + delta) }));
 
   const reorderLast = () => ctx?.lastOrder && setQty(Object.fromEntries(ctx.lastOrder.items.map((i) => [i.productId, i.qty])));
   const suggest = async () => setQty(await suggestedQuantities(outletId, products.map((p) => p.id)));
@@ -218,7 +225,7 @@ export default function FieldOrderForm({
                   <div className="min-w-0 flex-1">
                     <p className="text-sm font-medium leading-snug text-slate-900">{p.name}</p>
                     <p className="text-xs text-slate-500">{p.brand ?? p.category} · {peso(p.unitPrice)} · min {p.minOrderQty}{p.packMultiple > 1 ? ` · ×${p.packMultiple}` : ""}{orderType === "van_sale" && stock !== undefined ? ` · van ${stock}` : ""}</p>
-                    {promoLabels[p.id] && <p className="mt-0.5 text-xs font-medium text-emerald-700">🎁 {promoLabels[p.id]}</p>}
+                    {labelOf(p.id) && <p className="mt-0.5 text-xs font-medium text-emerald-700">🎁 {labelOf(p.id)}</p>}
                     {preview?.hints[p.id] && <p className="mt-0.5 text-xs text-blue-600">{preview.hints[p.id]}</p>}
                     {l && base > 0 && <p className="mt-0.5 text-xs font-medium text-slate-700">{peso(l.lineTotal)}{l.discount > 0 ? ` (−${peso(l.discount)}${l.promos.length ? ` · ${l.promos.join(", ")}` : ""})` : ""}{l.free ? ` · ${l.free} free` : ""}</p>}
                   </div>
@@ -230,9 +237,9 @@ export default function FieldOrderForm({
                     <span className="text-xs text-slate-400">By piece</span>
                   )}
                   <div className="flex items-center gap-1">
-                    <button type="button" aria-label={`Remove one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-medium text-slate-700 active:bg-slate-100 disabled:opacity-30" disabled={base === 0} onClick={() => setBase(p.id, base - factor)}>−</button>
+                    <button type="button" aria-label={`Remove one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-medium text-slate-700 active:bg-slate-100 disabled:opacity-30" disabled={base === 0} onClick={() => bump(p.id, -factor)}>−</button>
                     <input className="input h-11 w-16 text-center" type="number" inputMode="numeric" min={0} aria-label={`Quantity of ${p.name}`} value={base ? Math.round(base / factor) : ""} placeholder="0" onChange={(e) => setBase(p.id, Number(e.target.value) * factor)} />
-                    <button type="button" aria-label={`Add one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 text-lg font-medium text-white active:bg-blue-700" onClick={() => setBase(p.id, base + factor)}>+</button>
+                    <button type="button" aria-label={`Add one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 text-lg font-medium text-white active:bg-blue-700" onClick={() => bump(p.id, factor)}>+</button>
                   </div>
                 </div>
               </li>
