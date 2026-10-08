@@ -252,7 +252,8 @@ export async function requestArReversal(formData: FormData) {
   if (!reason) return;
   const entry = await prisma.aRLedgerEntry.findUniqueOrThrow({ where: { id: arLedgerEntryId } });
   const requester = await currentUserName("Supervisor");
-  await prisma.approvalRequest.create({ data: { type: "ar_reversal", arLedgerEntryId, requestedBy: requester, amount: entry.amount, reason, status: "pending", outletId: entry.outletId } });
+  const reversalBranch = (await prisma.outlet.findUnique({ where: { id: entry.outletId }, select: { branchId: true } }))?.branchId ?? null;
+  await prisma.approvalRequest.create({ data: { type: "ar_reversal", arLedgerEntryId, requestedBy: requester, amount: entry.amount, reason, status: "pending", outletId: entry.outletId, branchId: reversalBranch } });
   await logAudit("ARLedgerEntry", arLedgerEntryId, "reverse_request", `Requested reversal of ${entry.type} ₱${entry.amount.toLocaleString()} — ${reason}`);
   revalidatePath("/supervisor/payment-reconciliation");
   redirect("/supervisor/approvals?reversal=submitted");

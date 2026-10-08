@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
+import { currentScope } from "@/lib/report-runner";
 import StatusBadge from "@/components/StatusBadge";
 import Banner from "@/components/Banner";
 import ChannelPicker from "@/components/ChannelPicker";
@@ -13,14 +14,16 @@ import { paymentTermOptions } from "@/lib/reference";
 export default async function OnboardingQueue({ back, error, notice }: { back: string; error?: string; notice?: string }) {
   const terms = await paymentTermOptions();
   const { userId } = await getSession();
+  const scope = await currentScope();
+  const mine = scope.branchIds ? { branchId: { in: scope.branchIds } } : {};
   const [pending, decided, channels, routes, creators] = await Promise.all([
     prisma.outlet.findMany({
-      where: { onboardingStatus: "pending" },
+      where: { onboardingStatus: "pending", ...mine },
       include: { branch: true, channel: true },
       orderBy: { createdAt: "asc" },
     }),
     prisma.outlet.findMany({
-      where: { onboardingStatus: { in: ["approved", "rejected", "returned"] } },
+      where: { onboardingStatus: { in: ["approved", "rejected", "returned"] }, ...mine },
       include: { branch: true, channel: true },
       orderBy: { createdAt: "desc" },
       take: 15,

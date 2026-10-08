@@ -412,8 +412,8 @@ export async function seedExtras(prisma: PrismaClient) {
     const od = b ? await prisma.invoice.findFirst({ where: { branchId: b.id, status: { in: ["unpaid", "partially_paid", "overdue"] }, dueDate: { lt: new Date() } }, include: { outlet: true }, orderBy: { dueDate: "asc" } }) : null;
     const sup = b ? await prisma.user.findFirst({ where: { role: "supervisor", branchId: b.id } }) : null;
     if (b && od && sup) {
-      const doc = await prisma.financialDocument.create({ data: { docNumber: "WO-00001", type: "write_off", outletId: od.outletId, invoiceId: od.id, amount: 3500, reason: "Customer closed the store — balance uncollectible", requestedBy: sup.id } });
-      await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: doc.id, outletId: od.outletId, branchId: b.id, requestedBy: sup.id, amount: 3500, reason: `WO-00001 — write off for ${od.outlet.name}: customer closed the store · needs head office finance approval` } });
+      const doc = await prisma.financialDocument.create({ data: { docNumber: "WO-00001", type: "write_off", outletId: od.outletId, invoiceId: od.id, amount: 3500, reason: "Customer closed the store — balance uncollectible", requestedBy: sup.name } });
+      await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: doc.id, outletId: od.outletId, branchId: b.id, requestedBy: sup.name, amount: 3500, reason: `WO-00001 — write off for ${od.outlet.name}: customer closed the store · needs head office finance approval` } });
     }
   }
 

@@ -5,11 +5,13 @@ import Banner from "@/components/Banner";
 import { formatCurrency, formatDate } from "@/lib/format";
 import { CLAIM_STATUS_LABEL } from "@/lib/claims";
 import { Plus } from "lucide-react";
+import { currentScope } from "@/lib/report-runner";
 
 export default async function ClaimsPage({ searchParams }: { searchParams: Promise<{ status?: string; error?: string; notice?: string }> }) {
   const { status, error, notice } = await searchParams;
+  const scope = await currentScope();
   const claims = await prisma.claim.findMany({
-    where: status ? { status } : {},
+    where: { ...(status ? { status } : {}), ...(scope.branchIds ? { branchId: { in: scope.branchIds } } : {}) },
     orderBy: { submittedAt: "desc" },
     include: { promotion: true, submittedBy: true, _count: { select: { lines: true } } },
   });

@@ -169,11 +169,38 @@ export async function seedDemo(prisma: PrismaClient) {
       await prisma.undeliveredBalance.updateMany({ where: { invoiceId: sInv.id }, data: { status: "redelivery_scheduled", redeliveryDate: daysFromNow(2) } });
       await prisma.invoice.update({ where: { id: sInv.id }, data: { deliveryStatus: "redelivery_scheduled" } });
       // short on stock: confirmed with part of the quantity on backorder
-      const bo = await mkOrder(b, o + 10, [[bi + 16, 900]], { age: 1 });
+      // the scarcest affordable product, ordered a little beyond what the warehouse has: a believable partial allocation
+      const whRows = await prisma.stockBalance.findMany({ where: { warehouse: { branchId: b.id, type: "saleable" }, locationType: "warehouse" }, include: { product: true } });
+      const avail = new Map<string, { n: number; price: number }>();
+      for (const r of whRows) {
+        const cur = avail.get(r.productId) ?? { n: 0, price: r.product.unitPrice };
+        cur.n += Math.max(0, r.qtyGood - r.qtyReserved);
+        avail.set(r.productId, cur);
+      }
+      const scarce = [...avail.entries()].filter(([, v]) => v.n > 0 && v.price <= 250).sort((x, y) => x[1].n - y[1].n)[0];
+      const scarceIdx = products.findIndex((x) => x.id === scarce[0]);
+      const bo = await mkOrder(b, o + 10, [[scarceIdx, scarce[1].n + 24]], { age: 1 });
       await allocateOrder(bo.order.id, "partial_backorder");
       // on hold for a credit decision
       const held = await mkOrder(b, o + 11, [[bi + 17, 40], [bi + 18, 30]], { age: 0, status: "on_hold", hold: "The order would take the customer over their credit limit." });
       await prisma.approvalRequest.create({ data: { type: "credit_limit_exception", salesOrderId: held.order.id, requestedBy: held.rep.name, branchId: b.id, outletId: held.outlet.id, amount: Math.round(held.pricing.total * 0.35), reason: `${held.outlet.name}: the order would take the customer over their credit limit.` } });
+    }
+  }
+
+  // Credit limits with headroom: keep one deliberately over-limit customer per branch for the credit-control screens.
+  if (!flowDone) {
+    for (const b of branches) {
+      const outlets = await prisma.outlet.findMany({ where: { branchId: b.id, status: "active" } });
+      const rows = [];
+      for (const o of outlets) {
+        const pos = await outletPosition(o.id);
+        rows.push({ o, exposure: pos.outstanding + pos.openOrderValue });
+      }
+      const worst = [...rows].sort((x, y) => y.exposure - y.o.creditLimit - (x.exposure - x.o.creditLimit))[0];
+      for (const r of rows) {
+        if (r.o.id === worst.o.id || r.exposure <= r.o.creditLimit * 0.9) continue;
+        await prisma.outlet.update({ where: { id: r.o.id }, data: { creditLimit: Math.ceil((r.exposure * 1.4) / 5000) * 5000 } });
+      }
     }
   }
 
@@ -214,10 +241,10 @@ export async function seedDemo(prisma: PrismaClient) {
     const o = outletsAll[9];
     const sup = users.find((u) => u.role === "supervisor" && u.branchId === o.branchId);
     const base = await prisma.financialDocument.count();
-    const debit = await prisma.financialDocument.create({ data: { docNumber: `DN-${pad(base + 1, 5)}`, type: "debit_note", outletId: o.id, amount: 640, reason: "Late-payment charge per the credit agreement", requestedBy: sup?.id ?? "" } });
-    await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: debit.id, outletId: o.id, branchId: o.branchId, requestedBy: sup?.id ?? "", amount: 640, reason: `${debit.docNumber} — debit note for ${o.name}: late-payment charge per the credit agreement` } });
-    const adj = await prisma.financialDocument.create({ data: { docNumber: `ADJ-${pad(base + 2, 5)}`, type: "adjustment", direction: "decrease", outletId: outletsAll[14].id, amount: 275, reason: "Rounding difference agreed with the customer", requestedBy: sup?.id ?? "" } });
-    await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: adj.id, outletId: outletsAll[14].id, branchId: outletsAll[14].branchId, requestedBy: sup?.id ?? "", amount: 275, reason: `${adj.docNumber} — adjustment (decrease) for ${outletsAll[14].name}: rounding difference agreed with the customer` } });
+    const debit = await prisma.financialDocument.create({ data: { docNumber: `DN-${pad(base + 1, 5)}`, type: "debit_note", outletId: o.id, amount: 640, reason: "Late-payment charge per the credit agreement", requestedBy: sup?.name ?? "Supervisor" } });
+    await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: debit.id, outletId: o.id, branchId: o.branchId, requestedBy: sup?.name ?? "Supervisor", amount: 640, reason: `${debit.docNumber} — debit note for ${o.name}: late-payment charge per the credit agreement` } });
+    const adj = await prisma.financialDocument.create({ data: { docNumber: `ADJ-${pad(base + 2, 5)}`, type: "adjustment", direction: "decrease", outletId: outletsAll[14].id, amount: 275, reason: "Rounding difference agreed with the customer", requestedBy: sup?.name ?? "Supervisor" } });
+    await prisma.approvalRequest.create({ data: { type: "fin_doc", refId: adj.id, outletId: outletsAll[14].id, branchId: outletsAll[14].branchId, requestedBy: sup?.name ?? "Supervisor", amount: 275, reason: `${adj.docNumber} — adjustment (decrease) for ${outletsAll[14].name}: rounding difference agreed with the customer` } });
   }
 
   // ---------------------------------------------------------------- 5. Tasks, leave, expenses, customer change requests

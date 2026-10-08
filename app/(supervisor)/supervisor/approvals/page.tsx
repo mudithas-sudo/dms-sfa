@@ -4,10 +4,13 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import { decideApproval, escalateApproval } from "@/app/actions/supervisor-actions";
 import Banner from "@/components/Banner";
 import { typeLabel } from "@/lib/approval-types";
+import { currentScope } from "@/lib/report-runner";
 
 export default async function ApprovalsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
   const { error, notice } = await searchParams;
+  const scope = await currentScope();
   const requests = await prisma.approvalRequest.findMany({
+    where: scope.branchIds ? { branchId: { in: scope.branchIds } } : {},
     orderBy: { createdAt: "desc" },
     include: { salesOrder: { include: { outlet: true } }, arLedgerEntry: { include: { outlet: true } } },
   });

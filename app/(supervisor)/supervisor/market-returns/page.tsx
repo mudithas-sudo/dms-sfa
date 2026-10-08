@@ -1,3 +1,4 @@
+import { currentScope } from "@/lib/report-runner";
 import { prisma } from "@/lib/prisma";
 import StatusBadge from "@/components/StatusBadge";
 import Banner from "@/components/Banner";
@@ -6,9 +7,11 @@ import { processMarketReturn } from "@/app/actions/supervisor-actions";
 
 export default async function MarketReturnsPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
   const { error, notice } = await searchParams;
+  const scope = await currentScope();
   const exceptions = await prisma.approvalRequest.findMany({ where: { type: "return_outside_policy" }, select: { refId: true, status: true } });
   const exStatus = (id: string) => exceptions.find((e) => e.refId === id)?.status;
   const returns = await prisma.marketReturn.findMany({
+    where: scope.branchIds ? { outlet: { branchId: { in: scope.branchIds } } } : {},
     orderBy: { createdAt: "desc" },
     include: { outlet: true, product: true, creditNote: true },
   });

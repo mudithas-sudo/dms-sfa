@@ -93,7 +93,8 @@ export async function bounceCheque(formData: FormData) {
   const dup = await prisma.approvalRequest.count({ where: { type: "cheque_bounce", refId: reference, outletId, status: "pending" } });
   if (!dup) {
     const total = entries.reduce((s, e) => s + e.amount, 0);
-    await prisma.approvalRequest.create({ data: { type: "cheque_bounce", refId: reference, outletId, requestedBy: await actorName(), amount: total, reason: `Cheque ${entries[0].chequeNumber} (${entries[0].chequeBank}) bounced after clearing — ${reason}`, payload: JSON.stringify({ reference, reason }) } });
+    const bounceBranch = (await prisma.outlet.findUnique({ where: { id: outletId }, select: { branchId: true } }))?.branchId ?? null;
+    await prisma.approvalRequest.create({ data: { type: "cheque_bounce", refId: reference, outletId, branchId: bounceBranch, requestedBy: await actorName(), amount: total, reason: `Cheque ${entries[0].chequeNumber} (${entries[0].chequeBank}) bounced after clearing — ${reason}`, payload: JSON.stringify({ reference, reason }) } });
     await notify({ role: "supervisor", title: "Bounced cheque needs reversal approval", body: `${reference} · ₱${total.toLocaleString()}`, link: "/supervisor/approvals", kind: "approval" });
   }
   revalidatePath(PAY);
