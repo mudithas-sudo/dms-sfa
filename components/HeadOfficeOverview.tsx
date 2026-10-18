@@ -38,7 +38,7 @@ export default async function HeadOfficeOverview({ days = 30 }: { days?: number 
         <Link href="/admin/network" className="btn-secondary text-xs">Receivables &amp; returns in detail</Link>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="scoreboard">
         <div className="card p-4"><p className="text-xs text-slate-500">Sales, last {days} days</p><p className="text-xl font-semibold text-slate-900">{formatCurrency(sales)}</p><p className={`text-[11px] ${growthOf(sales, prev) === null ? "text-slate-400" : sales >= prev ? "text-emerald-600" : "text-rose-600"}`}>{growthOf(sales, prev) !== null ? `${growthOf(sales, prev)! >= 0 ? "+" : ""}${growthOf(sales, prev)}% vs previous ${days} days` : "not enough earlier history to compare"}</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">This month vs target</p><p className="text-xl font-semibold text-slate-900">{formatCurrency(mtd)}</p><p className="text-[11px] text-slate-400">{target ? `${pct(mtd, target)} of ${formatCurrency(target)}` : "no target set"}</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Receivables from customers</p><p className="text-xl font-semibold text-slate-900">{formatCurrency(out)}</p><p className="text-[11px] text-rose-600">{formatCurrency(overdue)} overdue ({pct(overdue, out)})</p></div>

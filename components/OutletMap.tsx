@@ -9,7 +9,7 @@ interface Pin {
   label?: string;
 }
 
-const COLOR: Record<string, string> = { visited: "#059669", skipped: "#d97706", planned: "#2563eb", other: "#64748b" };
+const COLOR: Record<string, string> = { visited: "#5f8a22", skipped: "#d29b00", planned: "#1d4f7c", other: "#6f807a" };
 
 // A lightweight map: outlets are plotted as pins scaled to their bounding box around the representative's position.
 export default function OutletMap({ pins, me }: { pins: Pin[]; me?: { lat: number; lng: number } }) {
@@ -25,7 +25,7 @@ export default function OutletMap({ pins, me }: { pins: Pin[]; me?: { lat: numbe
   return (
     <svg viewBox={`0 0 ${w} ${h}`} className="w-full rounded-lg border border-slate-200 bg-slate-100">
       {[0.25, 0.5, 0.75].map((f) => (
-        <g key={f} stroke="#e2e8f0" strokeWidth="1">
+        <g key={f} stroke="#d6ded9" strokeWidth="1">
           <line x1={w * f} y1="0" x2={w * f} y2={h} />
           <line x1="0" y1={h * f} x2={w} y2={h * f} />
         </g>
@@ -41,8 +41,8 @@ export default function OutletMap({ pins, me }: { pins: Pin[]; me?: { lat: numbe
       ))}
       {me && (
         <g>
-          <circle cx={x(me.lng)} cy={y(me.lat)} r="6" fill="#0f172a" stroke="white" strokeWidth="2" />
-          <text x={x(me.lng) + 9} y={y(me.lat) + 3} fontSize="9" fill="#0f172a">You</text>
+          <circle cx={x(me.lng)} cy={y(me.lat)} r="6" fill="#0f2a40" stroke="white" strokeWidth="2" />
+          <text x={x(me.lng) + 9} y={y(me.lat) + 3} fontSize="9" fill="#0f2a40">You</text>
         </g>
       )}
     </svg>

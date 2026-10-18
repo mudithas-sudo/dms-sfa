@@ -14,7 +14,7 @@ export default async function SfaLoginPage({ searchParams }: { searchParams: Pro
   return (
     <div className="space-y-4 px-1">
       <div className="text-center">
-        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-600 text-xl font-bold text-white">CF</div>
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl bg-leaf text-2xl text-ink numeral">CF</div>
         <h2 className="mt-2 text-base font-semibold text-slate-900">Company F and B Field Sales</h2>
         <p className="text-xs text-slate-500">Sign in with your PIN on your registered device</p>
       </div>

@@ -28,9 +28,9 @@ export default function MobileBottomNav() {
             key={item.href}
             href={item.href}
             aria-current={active ? "page" : undefined}
-            className={`relative flex min-h-[56px] flex-col items-center justify-center gap-0.5 text-[11px] font-medium active:bg-slate-50 ${active ? "text-blue-600" : "text-slate-500"}`}
+            className={`relative flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-xs active:bg-slate-50 ${active ? "font-semibold text-slate-900" : "font-medium text-slate-500"}`}
           >
-            {active && <span className="absolute inset-x-5 top-0 h-0.5 rounded-full bg-blue-600" />}
+            {active && <span className="absolute inset-x-4 top-0 h-1 rounded-b bg-leaf" />}
             <Icon size={22} strokeWidth={active ? 2.4 : 2} />
             {item.label}
           </Link>

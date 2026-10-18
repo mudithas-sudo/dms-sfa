@@ -33,7 +33,7 @@ export default async function NetworkView({ reportsBase, days, profileBase }: { 
         </form>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="scoreboard">
         <div className="card p-4"><p className="text-xs text-slate-500">Receivables outstanding (all branches)</p><p className="text-xl font-semibold text-slate-900">{formatCurrency(totalOut)}</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Overdue</p><p className="text-xl font-semibold text-rose-600">{formatCurrency(sum((r) => r.overdue))}</p><p className="text-[11px] text-slate-400">{totalOut ? Math.round((sum((r) => r.overdue) / totalOut) * 100) : 0}% of outstanding</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Market returns awaiting credit</p><p className="text-xl font-semibold text-amber-600">{sum((r) => r.market.awaitingCredit)}</p></div>

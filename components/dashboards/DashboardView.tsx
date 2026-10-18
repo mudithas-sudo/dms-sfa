@@ -24,7 +24,7 @@ export async function DashboardIndex({ basePath }: { basePath: string }) {
       </div>
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
         {out.map((d) => (
-          <Link key={d.id} href={`${basePath}/${d.id}`} className="card p-4 transition hover:border-blue-300 hover:shadow">
+          <Link key={d.id} href={`${basePath}/${d.id}`} className="card p-4 transition hover:border-slate-400">
             <p className="text-sm font-semibold text-slate-900">{d.title}</p>
             <p className="mt-1 text-xs text-slate-500">{d.blurb}</p>
           </Link>
@@ -108,14 +108,14 @@ export default async function DashboardView({ id, basePath, reportsBase, params 
           const href = drill(t);
           const inner = (
             <>
-              <p className="text-xs text-slate-500">{t.label}</p>
-              <p className={`mt-1 text-2xl font-semibold ${t.tone ? TONE[t.tone] : "text-slate-900"}`}>{t.value}</p>
+              <p className="text-sm font-medium text-slate-500">{t.label}</p>
+              <p className={`numeral mt-1.5 text-4xl ${t.tone ? TONE[t.tone] : "text-slate-900"}`}>{t.value}</p>
               {t.sub && <p className="mt-0.5 text-[11px] text-slate-400">{t.sub}</p>}
               {href && <p className="mt-2 text-[11px] text-blue-600">Drill down →</p>}
             </>
           );
           return href ? (
-            <Link key={t.label} href={href} className="card p-4 transition hover:border-blue-300 hover:shadow">{inner}</Link>
+            <Link key={t.label} href={href} className="card p-4 transition hover:border-slate-400">{inner}</Link>
           ) : (
             <div key={t.label} className="card p-4">{inner}</div>
           );

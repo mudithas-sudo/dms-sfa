@@ -1,18 +1,19 @@
 import type { Metadata } from "next";
-import { Lexend, Source_Sans_3 } from "next/font/google";
+import { Barlow, Barlow_Condensed } from "next/font/google";
 import "./globals.css";
 
-// Typography via ui-ux-pro-max skill ("Corporate Trust" pairing): Lexend for
-// headings (built for reading-fluency research) + Source Sans 3 for body —
-// matched to enterprise/accessibility-focused products.
-const lexend = Lexend({
-  variable: "--font-heading",
-  subsets: ["latin"],
-});
-
-const sourceSans = Source_Sans_3({
+// Barlow comes from road and freight signage, which suits a system about trucks, cartons and delivery receipts.
+// Two widths of one family: Barlow for text and tables, Barlow Condensed for titles and every headline number.
+const barlow = Barlow({
   variable: "--font-body",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+});
+
+const barlowCondensed = Barlow_Condensed({
+  variable: "--font-heading",
+  subsets: ["latin"],
+  weight: ["500", "600", "700"],
 });
 
 export const metadata: Metadata = {
@@ -22,10 +23,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html
-      lang="en"
-      className={`${lexend.variable} ${sourceSans.variable} h-full antialiased`}
-    >
+    <html lang="en" className={`${barlow.variable} ${barlowCondensed.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

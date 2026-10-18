@@ -1,79 +1,227 @@
 @import "tailwindcss";
 
 /*
- * Palette from ui-ux-pro-max skill ("CRM & Client Management" profile):
- * blue-600 primary (#2563EB) + emerald-600 accent (#059669) on a slate
- * background — trust-oriented, matches the status badge scheme already
- * in use (emerald/amber/rose).
+ * Design system — "the dispatch ledger".
+ * The interface behaves like a well-run ledger or waybill: ruled rows, tabular figures, statuses that read like
+ * rubber stamps, and the colours of warehouse floor marking for meaning.
+ *   Ink       #0F2A40  text, the navigation rail
+ *   Leaf      #82AF36  the primary action (the same green as the proposal and the presentation)
+ *   Concrete  #F3F6F4  the page; panels are white with a hairline rule, no card shadows
+ *   Tape      #F2B705  needs attention      Signal  #C23B22  stop / overdue      Steel  #1D4F7C  links, selection
+ * Existing utility classes (slate-*, blue-*, emerald-*, amber-*, rose-*) are re-pointed at this palette below,
+ * so every screen follows the system without being rewritten.
  */
-:root {
-  --background: #f8fafc;
-  --foreground: #0f172a;
-  --font-sans: var(--font-body);
-  --font-heading: var(--font-heading);
+
+@theme {
+  --color-ink: #0f2a40;
+  --color-leaf: #82af36;
+  --color-leaf-deep: #4e7a1a;
+  --color-tape: #f2b705;
+  --color-signal: #c23b22;
+
+  /* neutrals: concrete, ending in ink */
+  --color-slate-50: #f3f6f4;
+  --color-slate-100: #e8edea;
+  --color-slate-200: #d6ded9;
+  --color-slate-300: #b9c5bf;
+  --color-slate-400: #667772;
+  --color-slate-500: #485a56;
+  --color-slate-600: #374944;
+  --color-slate-700: #283836;
+  --color-slate-800: #1b2b2d;
+  --color-slate-900: #0f2a40;
+  --color-slate-950: #0a1d2d;
+
+  /* blue becomes steel: links, selection, focus */
+  --color-blue-50: #eaf1f8;
+  --color-blue-100: #d6e4f1;
+  --color-blue-200: #b3cce3;
+  --color-blue-300: #84aacd;
+  --color-blue-400: #4f82b3;
+  --color-blue-500: #2d6397;
+  --color-blue-600: #1d4f7c;
+  --color-blue-700: #163f63;
+  --color-blue-800: #112f4a;
+  --color-blue-900: #0c2236;
+
+  /* emerald becomes leaf: success and "done" */
+  --color-emerald-50: #f0f7e4;
+  --color-emerald-100: #e1efc8;
+  --color-emerald-200: #c8e1a0;
+  --color-emerald-300: #a8ce70;
+  --color-emerald-400: #8dbb48;
+  --color-emerald-500: #74a22e;
+  --color-emerald-600: #5f8a22;
+  --color-emerald-700: #4a6f1a;
+  --color-emerald-800: #3a5715;
+  --color-emerald-900: #2b4210;
+
+  /* amber becomes floor tape */
+  --color-amber-50: #fff8db;
+  --color-amber-100: #ffefb0;
+  --color-amber-200: #fbe07a;
+  --color-amber-300: #f5cc40;
+  --color-amber-400: #f2b705;
+  --color-amber-500: #d29b00;
+  --color-amber-600: #b37f00;
+  --color-amber-700: #8a6100;
+  --color-amber-800: #6b4a00;
+  --color-amber-900: #4f3700;
+
+  /* rose becomes signal red */
+  --color-rose-50: #fdeeea;
+  --color-rose-100: #fadbd3;
+  --color-rose-200: #f3b8aa;
+  --color-rose-300: #e88e7b;
+  --color-rose-400: #d96550;
+  --color-rose-500: #c23b22;
+  --color-rose-600: #aa2e18;
+  --color-rose-700: #8c2512;
+  --color-rose-800: #6e1d0e;
+  --color-rose-900: #52160a;
+
+  /* a hierarchy of corners: stamps and fields are tight, panels slightly softer */
+  --radius-sm: 2px;
+  --radius-md: 3px;
+  --radius-lg: 4px;
+  --radius-xl: 6px;
+  --radius-2xl: 8px;
+
+  /* panels sit on a hairline rule, not a shadow; only floating things get depth */
+  --shadow-xs: none;
+  --shadow-sm: 0 1px 0 rgb(15 42 64 / 0.05);
+  --shadow-md: 0 4px 14px rgb(15 42 64 / 0.12);
+  --shadow-lg: 0 10px 28px rgb(15 42 64 / 0.16);
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-body);
-  --font-heading: var(--font-heading);
+  --font-sans: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+}
+
+:root {
+  --background: #f3f6f4;
+  --foreground: #0f2a40;
+}
+
+html {
+  font-size: 16.5px; /* Barlow is a narrow face; a touch larger keeps tables and forms easy to read */
 }
 
 body {
   background: var(--background);
   color: var(--foreground);
   font-family: var(--font-body), ui-sans-serif, system-ui, sans-serif;
+  font-variant-numeric: tabular-nums; /* amounts and quantities line up in every column */
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2 {
   font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  letter-spacing: 0.005em;
+}
+
+/* the condensed numeral: used for every headline number */
+.numeral {
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  font-weight: 600;
+  letter-spacing: 0.005em;
+  line-height: 1;
+}
+
+:where(a, button, input, select, textarea, summary):focus-visible {
+  outline: 2px solid var(--color-leaf);
+  outline-offset: 2px;
 }
 
 @layer components {
+  /* statuses read like rubber stamps: square-cornered, ruled, sentence case */
   .badge {
-    @apply inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium;
+    @apply inline-flex items-center gap-1 whitespace-nowrap rounded-[3px] border px-2 py-0.5 text-xs font-semibold leading-tight;
   }
   .badge-green {
-    @apply bg-emerald-50 text-emerald-700 ring-1 ring-inset ring-emerald-600/20;
+    @apply border-emerald-300 bg-emerald-50 text-emerald-800;
   }
   .badge-amber {
-    @apply bg-amber-50 text-amber-700 ring-1 ring-inset ring-amber-600/20;
+    @apply border-amber-300 bg-amber-50 text-amber-800;
   }
   .badge-red {
-    @apply bg-rose-50 text-rose-700 ring-1 ring-inset ring-rose-600/20;
+    @apply border-rose-300 bg-rose-50 text-rose-700;
   }
   .badge-slate {
-    @apply bg-slate-100 text-slate-600 ring-1 ring-inset ring-slate-500/20;
+    @apply border-slate-300 bg-slate-100 text-slate-600;
   }
 
   .card {
-    @apply rounded-xl border border-slate-200 bg-white shadow-sm;
+    @apply rounded-xl border border-slate-200 bg-white;
   }
 
   .btn-primary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-blue-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-blue-500 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-leaf px-4 py-2 text-sm font-semibold text-ink transition hover:brightness-95 active:brightness-90 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-secondary {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-3.5 py-2 text-sm font-medium text-slate-700 shadow-sm transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-semibold text-slate-800 transition hover:border-slate-400 hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-danger {
-    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-600 px-3.5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-rose-500 disabled:cursor-not-allowed disabled:opacity-50;
+    @apply inline-flex items-center justify-center gap-1.5 rounded-lg bg-rose-500 px-4 py-2 text-sm font-semibold text-white transition hover:bg-rose-600 disabled:cursor-not-allowed disabled:opacity-50;
   }
 
   .input {
-    @apply block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm shadow-sm focus:border-blue-500 focus:outline-none focus:ring-1 focus:ring-blue-500;
+    @apply block w-full rounded-lg border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900 placeholder:text-slate-400 focus:border-slate-900 focus:outline-none focus:ring-1 focus:ring-slate-900;
   }
   .label {
-    @apply mb-1 block text-xs font-medium text-slate-600;
+    @apply mb-1 block text-xs font-semibold text-slate-600;
   }
 
+  /* ledger tables: a heavy rule under the head, hairlines between rows */
   .th {
-    @apply px-4 py-2.5 text-left text-xs font-semibold uppercase tracking-wide text-slate-500;
+    @apply border-b-2 border-slate-900 px-4 py-2.5 text-left text-xs font-semibold text-slate-600;
   }
   .td {
     @apply px-4 py-3 text-sm text-slate-700;
   }
+  /* document numbers and codes are never broken across lines */
+  .td a {
+    white-space: nowrap;
+  }
+}
+
+/* The scoreboard: headline figures on one ruled band. Each cell is label, condensed numeral, note. */
+.scoreboard {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  overflow: hidden;
+  border: 1px solid var(--color-slate-200);
+  border-radius: 6px;
+  background: var(--color-slate-200);
+}
+@media (min-width: 1024px) {
+  .scoreboard {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+.scoreboard > .card {
+  border: 0;
+  border-radius: 0;
+  padding: 1rem 1.15rem 1.05rem;
+}
+.scoreboard > .card > p:nth-child(1) {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--color-slate-500);
+}
+.scoreboard > .card > p:nth-child(2) {
+  margin-top: 0.45rem;
+  font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
+  font-size: 2.15rem;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0.005em;
+}
+.scoreboard > .card > p:nth-child(3) {
+  margin-top: 0.45rem;
+  font-size: 0.8rem;
 }
 
 /* Field app (mobile): comfortable touch targets, and 16px form text so phones do not zoom the page when a field is focused. */
@@ -105,5 +253,14 @@ h1, h2, h3, h4, h5, h6 {
   main {
     overflow: visible !important;
     padding: 0 !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
   }
 }

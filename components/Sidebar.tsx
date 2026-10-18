@@ -140,14 +140,12 @@ export default function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="no-print flex h-screen w-64 shrink-0 flex-col border-r border-slate-200 bg-white">
-      <div className="flex h-16 items-center gap-2 border-b border-slate-200 px-5">
-        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600 text-sm font-bold text-white">
-          CF
-        </div>
-        <div>
-          <p className="text-sm font-semibold text-slate-900 leading-tight">Company F and B</p>
-          <p className="text-xs text-slate-500 leading-tight">{roleLabel}</p>
+    <aside className="no-print sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-slate-900 text-white">
+      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
+        <div className="numeral flex h-9 w-9 items-center justify-center rounded-md bg-leaf text-lg font-bold text-ink">CF</div>
+        <div className="min-w-0">
+          <p className="font-display truncate text-lg font-semibold leading-tight text-white">Company F and B</p>
+          <p className="truncate text-xs leading-tight text-white/60">{roleLabel}</p>
         </div>
       </div>
       <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
@@ -157,14 +155,15 @@ export default function Sidebar({
           return (
             <div key={item.href}>
               {item.section && (
-                <p className="px-3 pb-1 pt-4 text-[10px] font-semibold uppercase tracking-widest text-slate-400">{item.section}</p>
+                <p className="px-3 pb-1 pt-5 text-xs font-semibold text-white/50">{item.section}</p>
               )}
             <Link
               href={item.href}
-              className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition ${
+              aria-current={active ? "page" : undefined}
+              className={`relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
                 active
-                  ? "bg-blue-50 text-blue-700"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                  ? "bg-white/10 font-semibold text-white before:absolute before:inset-y-1.5 before:-left-3 before:w-1 before:rounded-r before:bg-leaf"
+                  : "font-medium text-white/75 hover:bg-white/5 hover:text-white"
               }`}
             >
               <Icon size={18} />
@@ -174,9 +173,7 @@ export default function Sidebar({
           );
         })}
       </nav>
-      <div className="border-t border-slate-200 p-4 text-xs text-slate-400">
-        Prototype build · not for production use
-      </div>
+      <div className="border-t border-white/10 p-4 text-xs text-white/50">Prototype build, not for production use</div>
     </aside>
   );
 }

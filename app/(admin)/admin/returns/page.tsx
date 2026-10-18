@@ -29,7 +29,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
         </form>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="scoreboard">
         <div className="card p-4"><p className="text-xs text-slate-500">Returned by customers</p><p className="text-xl font-semibold">{formatCurrency(marketValue)}</p><p className="text-[11px] text-slate-400">{v.market.length} returns · {sum((r) => r.market.awaitingCredit)} awaiting a credit note</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Outside the return policy</p><p className="text-xl font-semibold text-amber-600">{sum((r) => r.market.outsidePolicy)}</p><p className="text-[11px] text-slate-400">need an exception approval</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">To the central warehouse</p><p className="text-xl font-semibold">{sum((r) => r.central.units)} units</p><p className="text-[11px] text-slate-400">{sum((r) => r.central.awaitingApproval)} awaiting approval · {sum((r) => r.central.inTransit)} in transit</p></div>

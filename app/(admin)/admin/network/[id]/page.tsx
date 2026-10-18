@@ -31,7 +31,7 @@ export default async function BranchProfilePage({ params, searchParams }: { para
         </form>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="scoreboard">
         <div className="card p-4"><p className="text-xs text-slate-500">Sales</p><p className="text-xl font-semibold">{formatCurrency(c.sales)}</p><p className="text-[11px] text-slate-400">{c.target ? `Month: ${pct(c.salesMtd, c.target)} of ${formatCurrency(c.target)} target` : "No target set"}</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Receivable</p><p className="text-xl font-semibold">{formatCurrency(c.outstanding)}</p><p className="text-[11px] text-rose-600">{formatCurrency(c.overdue)} overdue · {c.overdueInvoices} invoices</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Returns from customers</p><p className="text-xl font-semibold">{formatCurrency(c.market.value)}</p><p className="text-[11px] text-slate-400">{c.market.count} returns · {pct(c.market.value, c.sales)} of sales</p></div>

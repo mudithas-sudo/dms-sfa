@@ -32,7 +32,7 @@ export default async function ReceivablesPage({ searchParams }: { searchParams: 
         </form>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="scoreboard">
         <div className="card p-4"><p className="text-xs text-slate-500">Outstanding</p><p className="text-xl font-semibold">{formatCurrency(out)}</p><p className="text-[11px] text-slate-400">{v.customerCount} customers owe money</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Overdue</p><p className="text-xl font-semibold text-rose-600">{formatCurrency(overdue)}</p><p className="text-[11px] text-slate-400">{pct(overdue, out)} of outstanding · {sum((r) => r.overdueInvoices)} invoices</p></div>
         <div className="card p-4"><p className="text-xs text-slate-500">Collected, last {days} days</p><p className="text-xl font-semibold text-emerald-700">{formatCurrency(sum((r) => r.collections))}</p><p className="text-[11px] text-slate-400">{formatCurrency(sum((r) => r.pendingCheques))} cheques not yet cleared</p></div>
