@@ -102,6 +102,7 @@
 :root {
   --background: #f3f6f4;
   --foreground: #0f2a40;
+  --font-heading: var(--font-body); /* titles and figures use the same face as the navigation */
 }
 
 html {
@@ -214,9 +215,9 @@ h2 {
 .scoreboard > .card > p:nth-child(2) {
   margin-top: 0.45rem;
   font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
-  font-size: 2.15rem;
+  font-size: 1.65rem;
   font-weight: 600;
-  line-height: 1;
+  line-height: 1.1;
   letter-spacing: 0.005em;
 }
 .scoreboard > .card > p:nth-child(3) {

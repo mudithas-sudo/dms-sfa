@@ -109,7 +109,7 @@ export default async function DashboardView({ id, basePath, reportsBase, params 
           const inner = (
             <>
               <p className="text-sm font-medium text-slate-500">{t.label}</p>
-              <p className={`numeral mt-1.5 text-4xl ${t.tone ? TONE[t.tone] : "text-slate-900"}`}>{t.value}</p>
+              <p className={`numeral mt-1.5 text-3xl ${t.tone ? TONE[t.tone] : "text-slate-900"}`}>{t.value}</p>
               {t.sub && <p className="mt-0.5 text-[11px] text-slate-400">{t.sub}</p>}
               {href && <p className="mt-2 text-[11px] text-blue-600">Drill down →</p>}
             </>

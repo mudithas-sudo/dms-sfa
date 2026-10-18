@@ -25,7 +25,7 @@ export default function KpiCard({
     <div className="card flex items-start justify-between gap-3 p-4">
       <div className="min-w-0">
         <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className={`numeral mt-1.5 text-4xl ${TONE[tone]}`}>{value}</p>
+        <p className={`numeral mt-1.5 text-3xl ${TONE[tone]}`}>{value}</p>
         {sublabel && <p className="mt-1.5 text-xs text-slate-500">{sublabel}</p>}
       </div>
       {Icon && <Icon size={20} className="mt-0.5 shrink-0 text-slate-300" aria-hidden="true" />}
