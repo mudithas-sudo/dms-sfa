@@ -105,7 +105,7 @@ export default async function PricingPage({
                   <td className="td">{r.product?.name ?? r.scopeCategory ?? "All products"}</td>
                   <td className="td">{r.branchId ? branchName.get(r.branchId) : "All branches"}</td>
                   <td className="td">{r.priceType === "fixed_price" ? `Fixed ${formatCurrency(r.value)}` : `${r.value}% off`}</td>
-                  <td className="td">{formatDate(r.startDate)}</td>
+                  <td className="td whitespace-nowrap">{formatDate(r.startDate)}</td>
                   <td className="td">{r.endDate ? formatDate(r.endDate) : "—"}</td>
                   <td className="td">
                     <StatusBadge status={future ? "pending" : r.status} />

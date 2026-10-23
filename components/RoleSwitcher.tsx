@@ -38,7 +38,7 @@ export default function RoleSwitcher({
   return (
     <div className="flex flex-wrap items-center gap-2 text-sm">
       <select
-        className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm font-medium text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none"
+        className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm font-semibold text-slate-800 shadow-xs focus:border-blue-500 focus:outline-none"
         value={currentRole}
         disabled={isPending}
         onChange={(e) => startTransition(() => void setRole(e.target.value as RoleId))}
@@ -52,7 +52,7 @@ export default function RoleSwitcher({
 
       {branchScoped && (
         <select
-          className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none"
+          className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-xs focus:border-blue-500 focus:outline-none"
           value={currentBranchId ?? ""}
           disabled={isPending}
           onChange={(e) => startTransition(() => void setBranch(e.target.value))}
@@ -68,7 +68,7 @@ export default function RoleSwitcher({
 
       {usersForBranch.length > 0 && (
         <select
-          className="rounded-lg border border-slate-300 bg-white px-2.5 py-1.5 text-sm text-slate-700 shadow-sm focus:border-blue-500 focus:outline-none"
+          className="rounded-full border border-slate-200 bg-white px-3.5 py-2 text-sm text-slate-700 shadow-xs focus:border-blue-500 focus:outline-none"
           value={currentUserId ?? ""}
           disabled={isPending}
           onChange={(e) => startTransition(() => void setUser(e.target.value))}

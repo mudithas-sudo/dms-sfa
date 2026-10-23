@@ -140,40 +140,41 @@ export default function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="no-print sticky top-0 flex h-screen w-64 shrink-0 flex-col bg-slate-900 text-white">
-      <div className="flex h-16 items-center gap-3 border-b border-white/10 px-5">
-        <div className="numeral flex h-9 w-9 items-center justify-center rounded-md bg-leaf text-lg font-bold text-ink">CF</div>
+    <aside className="no-print sticky top-0 flex h-screen w-72 shrink-0 flex-col px-4 py-5">
+      <div className="flex items-center gap-3 px-2 pb-5">
+        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-md">CF</div>
         <div className="min-w-0">
-          <p className="font-display truncate text-lg font-semibold leading-tight text-white">Company F and B</p>
-          <p className="truncate text-xs leading-tight text-white/60">{roleLabel}</p>
+          <p className="font-display truncate text-base font-bold leading-tight text-slate-900">Company F and B</p>
+          <p className="truncate text-xs leading-tight text-slate-500">{roleLabel}</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-0.5 overflow-y-auto px-3 py-4">
+      <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
         {navItems.map((item) => {
           const active = pathname === item.href;
           const Icon = ICONS[item.icon];
           return (
             <div key={item.href}>
-              {item.section && (
-                <p className="px-3 pb-1 pt-5 text-xs font-semibold text-white/50">{item.section}</p>
-              )}
-            <Link
-              href={item.href}
-              aria-current={active ? "page" : undefined}
-              className={`relative flex items-center gap-3 rounded-md px-3 py-2 text-sm transition ${
-                active
-                  ? "bg-white/10 font-semibold text-white before:absolute before:inset-y-1.5 before:-left-3 before:w-1 before:rounded-r before:bg-leaf"
-                  : "font-medium text-white/75 hover:bg-white/5 hover:text-white"
-              }`}
-            >
-              <Icon size={18} />
-              {item.label}
-            </Link>
+              {item.section && <p className="px-3 pb-1.5 pt-5 text-xs font-semibold text-slate-400">{item.section}</p>}
+              <Link
+                href={item.href}
+                aria-current={active ? "page" : undefined}
+                className={`flex items-center gap-3 rounded-full px-3 py-2 text-sm transition ${
+                  active ? "bg-white font-semibold text-slate-900 shadow-sm" : "font-medium text-slate-500 hover:bg-white/60 hover:text-slate-900"
+                }`}
+              >
+                <span className={`flex h-7 w-7 items-center justify-center rounded-full ${active ? "bg-blue-600 text-white" : "text-slate-400"}`}>
+                  <Icon size={16} />
+                </span>
+                {item.label}
+              </Link>
             </div>
           );
         })}
       </nav>
-      <div className="border-t border-white/10 p-4 text-xs text-white/50">Prototype build, not for production use</div>
+      <div className="mt-4 rounded-2xl bg-white/70 p-4 text-xs leading-relaxed text-slate-500">
+        <p className="font-semibold text-slate-700">Prototype build</p>
+        Not for production use.
+      </div>
     </aside>
   );
 }

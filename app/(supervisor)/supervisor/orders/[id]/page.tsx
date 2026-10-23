@@ -121,9 +121,9 @@ export default async function OrderDetailPage({
                   <tr key={l.id}>
                     <td className="td font-medium text-slate-900">{l.product.name}</td>
                     <td className="td"><input className="input w-24" type="number" min={0} name={`qty_${l.productId}`} defaultValue={l.qty} /></td>
-                    <td className="td">{formatCurrency(l.unitPrice)}</td>
-                    <td className="td">{formatCurrency(l.discount)}</td>
-                    <td className="td">{formatCurrency(l.lineTotal)}</td>
+                    <td className="td whitespace-nowrap">{formatCurrency(l.unitPrice)}</td>
+                    <td className="td whitespace-nowrap">{formatCurrency(l.discount)}</td>
+                    <td className="td whitespace-nowrap">{formatCurrency(l.lineTotal)}</td>
                   </tr>
                 ))}
               </tbody>
@@ -160,9 +160,9 @@ export default async function OrderDetailPage({
                       <td className={`td ${l.qtyBackorder > 0 ? "font-medium text-amber-700" : ""}`}>{l.qtyBackorder || "—"}</td>
                       <td className="td">{l.qtyPicked ?? "—"}</td>
                       <td className={`td ${l.qtyDelivered !== null && l.qtyDelivered < l.qty ? "font-medium text-amber-600" : ""}`}>{l.qtyDelivered ?? "—"}</td>
-                      <td className="td">{formatCurrency(l.unitPrice)}</td>
-                      <td className="td">{formatCurrency(l.discount)}</td>
-                      <td className="td">{formatCurrency(l.lineTotal)}</td>
+                      <td className="td whitespace-nowrap">{formatCurrency(l.unitPrice)}</td>
+                      <td className="td whitespace-nowrap">{formatCurrency(l.discount)}</td>
+                      <td className="td whitespace-nowrap">{formatCurrency(l.lineTotal)}</td>
                     </tr>
                   );
                 })}

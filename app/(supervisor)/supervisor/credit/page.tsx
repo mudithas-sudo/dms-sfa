@@ -81,9 +81,9 @@ export default async function CreditControlPage({ searchParams }: { searchParams
             {shown.map((r) => (
               <tr key={r.id} className={r.flagged ? "bg-amber-50/50" : ""}>
                 <td className="td"><Link className="font-medium text-blue-700 hover:underline" href={`/supervisor/payment-reconciliation?outlet=${r.id}`}>{r.name}</Link><p className="text-[11px] text-slate-400">{r.code} · {r.paymentTerms.replace("_", " ")}</p></td>
-                <td className="td">{formatCurrency(r.creditLimit)}</td>
-                <td className="td">{formatCurrency(r.balance)}<p className={`text-[11px] ${r.usedPct >= 100 ? "text-rose-600" : r.usedPct >= num(s, "credit.nearLimitPct") ? "text-amber-600" : "text-slate-400"}`}>{r.usedPct}% used</p></td>
-                <td className="td">{formatCurrency(r.openOrder)}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(r.creditLimit)}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(r.balance)}<p className={`text-[11px] ${r.usedPct >= 100 ? "text-rose-600" : r.usedPct >= num(s, "credit.nearLimitPct") ? "text-amber-600" : "text-slate-400"}`}>{r.usedPct}% used</p></td>
+                <td className="td whitespace-nowrap">{formatCurrency(r.openOrder)}</td>
                 <td className={`td font-medium ${r.available < 0 ? "text-rose-600" : "text-slate-900"}`}>{formatCurrency(r.available)}</td>
                 <td className="td">{r.overdue > 0 ? <span className="text-rose-600">{formatCurrency(r.overdue)}<span className="block text-[11px]">{r.oldest} days</span></span> : "—"}{r.flagged && <span className="mt-0.5 block text-[10px] font-semibold uppercase text-amber-700">over threshold</span>}</td>
                 <td className="td"><StatusBadge status={r.creditStatus} />{r.blockedReason && r.creditStatus !== "active" && <p className="mt-0.5 max-w-[160px] text-[11px] text-slate-400">{r.blockedReason}</p>}</td>

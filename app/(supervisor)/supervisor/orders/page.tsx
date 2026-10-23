@@ -97,8 +97,8 @@ export default async function SupervisorOrdersPage({ searchParams }: { searchPar
                   </td>
                   <td className="td">{o.outlet.name}</td>
                   <td className="td text-xs">{o.source === "backend" ? "Backend" : "SFA"} · {o.salesperson.name}</td>
-                  <td className="td">{formatDate(o.orderDate)}</td>
-                  <td className="td">{formatCurrency(o.total)}</td>
+                  <td className="td whitespace-nowrap">{formatDate(o.orderDate)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(o.total)}</td>
                   <td className="td">{dr ? <StatusBadge status={dr.status} /> : o.invoices[0] ? <StatusBadge status={o.invoices[0].deliveryStatus} /> : <span className="text-slate-400">—</span>}</td>
                   <td className="td"><StatusBadge status={o.status} /></td>
                   <td className="td text-right">

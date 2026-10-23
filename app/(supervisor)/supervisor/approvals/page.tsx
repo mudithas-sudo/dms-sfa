@@ -77,7 +77,7 @@ export default async function ApprovalsPage({ searchParams }: { searchParams: Pr
                 <tr key={r.id}>
                   <td className="td">{typeLabel(r.type)}</td>
                   <td className="td">{r.requestedBy}</td>
-                  <td className="td">{formatCurrency(r.amount)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(r.amount)}</td>
                   <td className="td">{r.decidedBy ?? "—"}</td>
                   <td className="td text-xs text-slate-500">{r.decisionNote ?? "—"}</td>
                   <td className="td"><StatusBadge status={r.status} /></td>

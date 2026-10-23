@@ -130,7 +130,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
           <tbody className="divide-y divide-slate-100">
             {exceptions.map((e) => (
               <tr key={e.id}>
-                <td className="td">{formatDate(e.dayDate)}</td>
+                <td className="td whitespace-nowrap">{formatDate(e.dayDate)}</td>
                 <td className="td">{vcode.get(e.vanId)}</td>
                 <td className="td text-xs">{e.countedBy ?? "—"}</td>
                 <td className="td text-xs">{e.cause ?? "—"}</td>

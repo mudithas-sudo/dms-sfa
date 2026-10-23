@@ -77,7 +77,7 @@ export default async function OutletsPage({
                   {o.channel.name} · {o.subChannel}
                 </td>
                 <td className="td">{o.route?.name ?? "—"}</td>
-                <td className="td">{formatCurrency(o.creditLimit)}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(o.creditLimit)}</td>
                 <td className="td">
                   <div className="flex flex-wrap gap-1">
                     <StatusBadge status={o.status} />
