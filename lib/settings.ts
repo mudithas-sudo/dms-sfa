@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { prisma } from "@/lib/prisma";
 
 // Administrator-maintained configuration (thresholds, modes, policies). Every key has a
@@ -90,10 +91,10 @@ export async function getAllSettings(): Promise<Record<string, string>> {
   return out;
 }
 
-export async function getSetting(key: string): Promise<string> {
+export const getSetting = cache(async (key: string): Promise<string> => {
   const row = await prisma.appSetting.findUnique({ where: { key } });
   return row?.value ?? DEFAULTS.get(key) ?? "";
-}
+});
 
 export async function getNumberSetting(key: string): Promise<number> {
   const n = Number(await getSetting(key));

@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { cookies } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { ROLE_COOKIE, BRANCH_COOKIE, USER_COOKIE, type RoleId } from "@/lib/constants";
@@ -26,7 +27,8 @@ export async function validateUserId(userId: string | null): Promise<string | nu
   return user ? userId : null;
 }
 
-export async function getSession(): Promise<Session> {
+// Memoised per request: the layout, the page and every permission check share one lookup instead of repeating two queries each.
+export const getSession = cache(async function getSession(): Promise<Session> {
   const store = await cookies();
   const role = (store.get(ROLE_COOKIE)?.value as RoleId) || DEFAULT_ROLE;
   const [branchId, userId] = await Promise.all([
@@ -34,7 +36,7 @@ export async function getSession(): Promise<Session> {
     validateUserId(store.get(USER_COOKIE)?.value || null),
   ]);
   return { role, branchId, userId };
-}
+});
 
 export async function getCurrentUser() {
   const { userId } = await getSession();
