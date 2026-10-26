@@ -3,6 +3,7 @@ import RoleSwitcher from "@/components/RoleSwitcher";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollToTop from "@/components/ScrollToTop";
 import { prisma } from "@/lib/prisma";
+import { switcherLists } from "@/lib/switcher-lists";
 import Forbidden from "@/components/Forbidden";
 import { groupAllowed } from "@/lib/rbac";
 import type { RoleId } from "@/lib/constants";
@@ -22,12 +23,8 @@ export default async function MobileShell({
   title: string;
   children: React.ReactNode;
 }) {
-  const [branches, users, currentUser] = await Promise.all([
-    prisma.branch.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.user.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, branchId: true, role: true },
-    }),
+  const [{ branches, users }, currentUser] = await Promise.all([
+    switcherLists(),
     userId ? prisma.user.findUnique({ where: { id: userId }, include: { branch: true } }) : null,
   ]);
 

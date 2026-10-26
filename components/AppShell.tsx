@@ -3,25 +3,12 @@ import RoleSwitcher from "@/components/RoleSwitcher";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Bell } from "lucide-react";
-import { unstable_cache } from "next/cache";
+import { switcherLists } from "@/lib/switcher-lists";
 import Forbidden from "@/components/Forbidden";
 import MfaGate from "@/components/MfaGate";
 import { getSetting } from "@/lib/settings";
 import { groupAllowed, GROUP_ACCESS } from "@/lib/rbac";
 import { roleLabel, ROLES, type RoleId } from "@/lib/constants";
-
-// The role switcher's lists change only when someone edits branches or users, so they are kept for a minute instead of read on every page.
-const switcherLists = unstable_cache(
-  async () => {
-    const [branches, users] = await Promise.all([
-      prisma.branch.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-      prisma.user.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, branchId: true, role: true } }),
-    ]);
-    return { branches, users };
-  },
-  ["app-shell-switcher-lists"],
-  { revalidate: 60 },
-);
 
 export default async function AppShell({
   role,
