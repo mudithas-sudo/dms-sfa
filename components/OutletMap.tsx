@@ -10,7 +10,7 @@ interface Pin {
   label?: string;
 }
 
-const COLOR: Record<string, string> = { visited: "#1fa971", skipped: "#f59e0b", planned: "#3558f0", other: "#8891a8" };
+const COLOR: Record<string, string> = { visited: "#1d3280", skipped: "#8f98b0", planned: "#3558f0", other: "#b3bacd" };
 
 // A lightweight map: outlets are plotted as pins scaled to their bounding box around the representative's position.
 // With `route`, the pins are joined in order by a dashed line, like a planned run. `linkTo` makes each pin open a page;

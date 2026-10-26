@@ -31,7 +31,7 @@ export default async function DeliveriesPage({ searchParams }: { searchParams: P
 
   const PROGRESS: Record<string, number> = { pending_delivery: 0.1, redelivery_scheduled: 0.3, out_for_delivery: 0.55 };
   const DONE: Record<string, number> = { pending_delivery: 0, redelivery_scheduled: 0, out_for_delivery: 1 };
-  const PIN: Record<string, string> = { pending_delivery: "#3558f0", redelivery_scheduled: "#8891a8", out_for_delivery: "#f59e0b" };
+  const PIN: Record<string, string> = { pending_delivery: "#3558f0", redelivery_scheduled: "#8f98b0", out_for_delivery: "#1d3280" };
   const outCount = pending.filter((i) => i.deliveryStatus === "out_for_delivery").length;
 
   return (
@@ -103,7 +103,7 @@ export default async function DeliveriesPage({ searchParams }: { searchParams: P
           <OutletMap linkTo={null} height={300} pins={pending.map((i, n) => ({ id: i.id, name: i.outlet.name, lat: i.outlet.lat, lng: i.outlet.lng, color: PIN[i.deliveryStatus], label: String(n + 1) }))} />
           <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-slate-500">
             <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-600" />Awaiting</span>
-            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-amber-500" />On the road</span>
+            <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-blue-900" />On the road</span>
             <span className="inline-flex items-center gap-1.5"><span className="h-2.5 w-2.5 rounded-full bg-slate-400" />Re-delivery</span>
           </div>
         </aside>

@@ -7,7 +7,7 @@ export function initialsOf(name: string) {
   return name.split(/\s+/).filter(Boolean).slice(0, 2).map((w) => w[0]).join("").toUpperCase();
 }
 
-const TINTS = ["bg-blue-50 text-blue-700", "bg-emerald-50 text-emerald-700", "bg-amber-50 text-amber-700", "bg-rose-50 text-rose-600", "bg-slate-100 text-slate-600"];
+const TINTS = ["bg-blue-50 text-blue-700", "bg-blue-100 text-blue-800", "bg-slate-100 text-slate-600"];
 
 export function Avatar({ name, size = 40 }: { name: string; size?: number }) {
   const tint = TINTS[[...name].reduce((a, c) => a + c.charCodeAt(0), 0) % TINTS.length];

@@ -6,8 +6,8 @@
  * pastel status chips, and a single cobalt accent. Tracking screens use a progress line with a truck marker,
  * customers appear as avatars with round call buttons, and lists sit beside a map.
  *   Canvas   #F1F3F8  the page            Panel   white, 16px corners, soft shadow
- *   Cobalt   #3558F0  primary action, selection, the active step
- *   Mint     #1FA971  done                Amber   #F59E0B  needs attention      Coral  #E5484D  stop / overdue
+ *   Cobalt   #3558F0  the one accent: primary action, selection, the active step, "done"
+ *   Grey / Navy  attention and stop states are shades of the same family, never a second hue
  * Existing utility classes (slate-*, blue-*, emerald-*, amber-*, rose-*) are re-pointed at this palette below,
  * so every screen follows the system without being rewritten.
  */
@@ -41,41 +41,40 @@
   --color-blue-800: #2139a6;
   --color-blue-900: #1d3280;
 
-  /* emerald becomes mint: success and "done" */
-  --color-emerald-50: #e9f8f1;
-  --color-emerald-100: #d3f1e3;
-  --color-emerald-200: #a9e3c8;
-  --color-emerald-300: #74d0a8;
-  --color-emerald-400: #3fba88;
-  --color-emerald-500: #1fa971;
-  --color-emerald-600: #158a5b;
-  --color-emerald-700: #0f7049;
-  --color-emerald-800: #0e583c;
-  --color-emerald-900: #0b4430;
+  /* one colour theme: the semantic hues are folded into the accent family.
+     emerald (done) = cobalt, amber (attention) = cool grey, rose (stop / overdue) = deep navy */
+  --color-emerald-50: #eef2ff;
+  --color-emerald-100: #dfe6ff;
+  --color-emerald-200: #c3cfff;
+  --color-emerald-300: #9aaeff;
+  --color-emerald-400: #6c86fa;
+  --color-emerald-500: #4a69f4;
+  --color-emerald-600: #3558f0;
+  --color-emerald-700: #2845cf;
+  --color-emerald-800: #2139a6;
+  --color-emerald-900: #1d3280;
 
-  /* amber stays warm and friendly */
-  --color-amber-50: #fff6e5;
-  --color-amber-100: #ffeac2;
-  --color-amber-200: #ffd88a;
-  --color-amber-300: #fcc457;
-  --color-amber-400: #f9ae2c;
-  --color-amber-500: #f59e0b;
-  --color-amber-600: #d98206;
-  --color-amber-700: #a96304;
-  --color-amber-800: #854d0e;
-  --color-amber-900: #633a0a;
+  --color-amber-50: #eef0f6;
+  --color-amber-100: #e3e6ef;
+  --color-amber-200: #cfd4e2;
+  --color-amber-300: #b3bacd;
+  --color-amber-400: #8f98b0;
+  --color-amber-500: #6f7993;
+  --color-amber-600: #565f79;
+  --color-amber-700: #434b63;
+  --color-amber-800: #333a4f;
+  --color-amber-900: #262c3d;
 
-  /* rose becomes coral */
-  --color-rose-50: #ffedee;
-  --color-rose-100: #ffdcdd;
-  --color-rose-200: #fdb9bb;
-  --color-rose-300: #f98d90;
-  --color-rose-400: #f06165;
-  --color-rose-500: #e5484d;
-  --color-rose-600: #cc3338;
-  --color-rose-700: #a52a2f;
-  --color-rose-800: #832225;
-  --color-rose-900: #621a1d;
+  --color-rose-50: #e8ecfa;
+  --color-rose-100: #d5dcf5;
+  --color-rose-200: #b0bdea;
+  --color-rose-300: #8497d8;
+  --color-rose-400: #5a72c4;
+  --color-rose-500: #25398a;
+  --color-rose-600: #1f3178;
+  --color-rose-700: #1a2a68;
+  --color-rose-800: #152256;
+  --color-rose-900: #101a44;
 
   /* generous corners: fields 12, panels 16–20, chips and buttons are full pills */
   --radius-sm: 6px;
