@@ -3,11 +3,25 @@ import RoleSwitcher from "@/components/RoleSwitcher";
 import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Bell } from "lucide-react";
+import { unstable_cache } from "next/cache";
 import Forbidden from "@/components/Forbidden";
 import MfaGate from "@/components/MfaGate";
 import { getSetting } from "@/lib/settings";
 import { groupAllowed, GROUP_ACCESS } from "@/lib/rbac";
 import { roleLabel, ROLES, type RoleId } from "@/lib/constants";
+
+// The role switcher's lists change only when someone edits branches or users, so they are kept for a minute instead of read on every page.
+const switcherLists = unstable_cache(
+  async () => {
+    const [branches, users] = await Promise.all([
+      prisma.branch.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
+      prisma.user.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true, branchId: true, role: true } }),
+    ]);
+    return { branches, users };
+  },
+  ["app-shell-switcher-lists"],
+  { revalidate: 60 },
+);
 
 export default async function AppShell({
   role,
@@ -29,22 +43,17 @@ export default async function AppShell({
   const allowed = groupAllowed(role, group);
   const branchScoped = role !== "admin" && role !== "management";
 
-  const [mfaRoles, me] = await Promise.all([
+  const [mfaRoles, me, unread, lists, activeBranch] = await Promise.all([
     getSetting("mfa.privilegedRoles"),
     userId ? prisma.user.findUnique({ where: { id: userId }, select: { name: true, mfaEnrolled: true } }) : null,
-  ]);
-  const needsMfa = mfaRoles.split(",").includes(role) && !!me && !me.mfaEnrolled;
-  const [unread, branches, users, activeBranch] = await Promise.all([
     prisma.notification.count({
       where: { readAt: null, OR: [...(userId ? [{ userId }] : []), { role, userId: null }] },
     }),
-    prisma.branch.findMany({ orderBy: { name: "asc" }, select: { id: true, name: true } }),
-    prisma.user.findMany({
-      orderBy: { name: "asc" },
-      select: { id: true, name: true, branchId: true, role: true },
-    }),
+    switcherLists(),
     branchScoped && branchId ? prisma.branch.findUnique({ where: { id: branchId } }) : null,
   ]);
+  const { branches, users } = lists;
+  const needsMfa = mfaRoles.split(",").includes(role) && !!me && !me.mfaEnrolled;
 
   return (
     <div className="flex min-h-screen bg-slate-50">

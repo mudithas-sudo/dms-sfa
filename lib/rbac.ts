@@ -1,3 +1,4 @@
+import { cache } from "react";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
@@ -49,11 +50,12 @@ function rank(l: Level) {
   return LEVELS.indexOf(l);
 }
 
-export async function permissionFor(role: string, module: ModuleId): Promise<Level> {
+// Memoised per request: a screen that checks many permissions (the report catalogue checks one per report) asks the database once per role and module.
+export const permissionFor = cache(async (role: string, module: ModuleId): Promise<Level> => {
   const row = await prisma.rolePermission.findUnique({ where: { role_module: { role, module } } });
   if (row) return row.level as Level;
   return DEFAULT_MATRIX[role as RoleId]?.[module] ?? "none";
-}
+});
 
 export async function can(module: ModuleId, level: Level): Promise<boolean> {
   const { role } = await getSession();
