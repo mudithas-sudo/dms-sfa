@@ -46,18 +46,18 @@ export default async function AppShell({
     <div className="flex min-h-screen bg-slate-50">
       <Sidebar navItems={navItems} roleLabel={roleLabel(role)} />
       <div className="flex min-w-0 flex-1 flex-col">
-        <header className="flex min-h-16 flex-wrap items-center justify-between gap-3 border-b border-slate-200 bg-white px-6">
+        <header className="flex min-h-20 flex-wrap items-center justify-between gap-3 px-8 pt-5">
           <div>
-            <h1 className="text-2xl font-semibold leading-tight text-slate-900">{title}</h1>
+            <h1 className="text-2xl font-bold leading-tight text-slate-900">{title}</h1>
             {activeBranch && (
-              <p className="text-xs text-slate-500">Branch: {activeBranch.name}</p>
+              <p className="mt-0.5 text-sm text-slate-500">Branch: {activeBranch.name}</p>
             )}
           </div>
-          <div className="no-print flex items-center gap-3">
-            <Link href="/notifications" className="relative rounded-md p-2 text-slate-500 hover:bg-slate-100 hover:text-slate-900" title="Notifications">
+          <div className="no-print ml-auto flex items-center gap-3">
+            <Link href="/notifications" className="btn-round relative h-10 w-10" title="Notifications" aria-label="Notifications">
               <Bell size={18} />
               {unread > 0 && (
-                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-sm bg-rose-500 px-1 text-[11px] font-semibold text-white">
+                <span className="absolute -right-0.5 -top-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-rose-500 px-1 text-[11px] font-semibold text-white">
                   {unread > 99 ? "99+" : unread}
                 </span>
               )}
@@ -71,7 +71,7 @@ export default async function AppShell({
             />
           </div>
         </header>
-        <main className="flex-1 overflow-y-auto p-6">{needsMfa ? <MfaGate userName={me!.name} roleName={roleLabel(role)} back={ROLES.find((r) => r.id === role)?.homePath ?? "/"} /> : allowed ? children : <Forbidden role={role} area={title} />}</main>
+        <main className="flex-1 overflow-y-auto px-8 pb-10 pt-5">{needsMfa ? <MfaGate userName={me!.name} roleName={roleLabel(role)} back={ROLES.find((r) => r.id === role)?.homePath ?? "/"} /> : allowed ? children : <Forbidden role={role} area={title} />}</main>
       </div>
     </div>
   );

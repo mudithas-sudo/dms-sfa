@@ -5,7 +5,7 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import AutoRefresh from "@/components/dashboards/AutoRefresh";
 import StatusBadge from "@/components/StatusBadge";
 
-const TONE = { red: "border-rose-200 bg-rose-50 text-rose-700", amber: "border-amber-200 bg-amber-50 text-amber-700", blue: "border-blue-200 bg-blue-50 text-blue-700" };
+const TONE = { red: "border-transparent bg-rose-50 text-rose-700", amber: "border-transparent bg-amber-50 text-amber-700", blue: "border-transparent bg-blue-50 text-blue-700" };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 // A comparison with a near-empty earlier period says nothing, so it is not shown.
 const growthOf = (now: number, before: number) => (before > now * 0.1 ? Math.round(((now - before) / before) * 100) : null);
@@ -55,7 +55,7 @@ export default async function HeadOfficeOverview({ days = 30 }: { days?: number 
           <ul className="grid gap-2 md:grid-cols-2">
             {attention.map((a) => (
               <li key={a.title}>
-                <Link href={a.href} className={`flex items-start gap-3 rounded-lg border p-3 hover:shadow-sm ${TONE[a.tone]}`}>
+                <Link href={a.href} className={`flex items-start gap-3 rounded-2xl border p-4 transition hover:shadow-md ${TONE[a.tone]}`}>
                   <span className="min-w-8 text-center text-lg font-semibold leading-none">{a.count}</span>
                   <span className="text-xs"><span className="block font-medium">{a.title}</span><span className="opacity-80">{a.detail}</span></span>
                 </Link>

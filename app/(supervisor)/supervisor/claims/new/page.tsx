@@ -75,7 +75,7 @@ export default async function NewClaimPage({ searchParams }: { searchParams: Pro
                     <td className="td">{o.outletName}</td>
                     <td className="td text-xs">{formatDate(o.orderDate)}</td>
                     <td className="td">{o.units}</td>
-                    <td className="td">{formatCurrency(o.eligible)}</td>
+                    <td className="td whitespace-nowrap">{formatCurrency(o.eligible)}</td>
                   </tr>
                 ))}
                 {orders.length === 0 && <tr><td className="td text-slate-400" colSpan={6}>No unclaimed qualifying orders in this period.</td></tr>}

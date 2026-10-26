@@ -131,7 +131,7 @@ export default async function FinanceDocumentsPage({ searchParams }: { searchPar
                   <td className="td font-medium text-slate-900">{d.docNumber}</td>
                   <td className="td text-xs capitalize">{d.type.replace("_", " ")}{d.type === "adjustment" ? ` (${d.direction})` : ""}</td>
                   <td className="td">{outletName.get(d.outletId) ?? "—"}</td>
-                  <td className="td">{formatCurrency(d.amount)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(d.amount)}</td>
                   <td className="td max-w-[240px] text-xs text-slate-500">{d.reason}{d.decisionNote ? ` — ${d.decisionNote}` : ""}</td>
                   <td className="td text-xs">{d.requestedBy}<br />{formatDateTime(d.createdAt)}</td>
                   <td className="td"><StatusBadge status={d.status} /></td>
@@ -153,7 +153,7 @@ export default async function FinanceDocumentsPage({ searchParams }: { searchPar
                 <tr key={n.id}>
                   <td className="td font-medium text-slate-900">{n.noteNumber}</td>
                   <td className="td">{n.outlet.name}</td>
-                  <td className="td">{formatCurrency(n.amount)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(n.amount)}</td>
                   <td className="td max-w-[260px] text-xs text-slate-500">{n.reason}</td>
                   <td className="td text-xs">{n.issuedBy}<br />{formatDateTime(n.issuedAt)}</td>
                   <td className="td"><StatusBadge status={n.status} /></td>

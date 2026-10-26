@@ -119,9 +119,9 @@ export default async function ManagementDashboard() {
                 <td className="td">
                   {formatCurrency(invoices.filter((i) => i.branchId === b.id).reduce((s, i) => s + i.amount, 0))}
                 </td>
-                <td className="td">{formatCurrency(branchPurchases(b.id))}</td>
-                <td className="td">{formatCurrency(branchStockValue(b.id))}</td>
-                <td className="td">{formatCurrency(branchVanStockValue(b.id))}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(branchPurchases(b.id))}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(branchStockValue(b.id))}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(branchVanStockValue(b.id))}</td>
                 <td className="td text-right">
                   <Link href={`/management/branch/${b.id}`} className="text-blue-600 hover:underline">
                     View Transactions

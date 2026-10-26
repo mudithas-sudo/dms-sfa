@@ -39,7 +39,7 @@ export default async function ProductsPage() {
                 <td className="td">{p.brand ? `${p.brand} · ` : ""}{p.category}</td>
                 <td className="td">{p.uom}{p.packSize ? ` · ${p.packSize}` : ""}</td>
                 <td className="td">{p.minOrderQty}</td>
-                <td className="td">{formatCurrency(p.unitPrice)}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(p.unitPrice)}</td>
                 <td className="td">{p.hasExpiry ? "Yes" : "No"}</td>
                 <td className="td"><StatusBadge status={p.status} /></td>
                 <td className="td text-right">

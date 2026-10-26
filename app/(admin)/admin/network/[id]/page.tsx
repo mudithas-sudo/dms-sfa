@@ -59,7 +59,7 @@ export default async function BranchProfilePage({ params, searchParams }: { para
           <h3 className="border-b border-slate-100 px-4 py-3 text-sm font-semibold">Returns from customers <span className="font-normal text-slate-400">({c.market.count})</span></h3>
           <table className="w-full"><thead className="bg-slate-50"><tr><th className="th">Date</th><th className="th">Customer</th><th className="th">Product</th><th className="th text-right">Qty</th><th className="th">Reason</th><th className="th">Credit note</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {x.market.map((m) => <tr key={m.id}><td className="td">{formatDate(m.createdAt)}</td><td className="td">{m.outlet.name}</td><td className="td">{m.product.name}</td><td className="td text-right">{m.qty}</td><td className="td">{m.reason}{m.outsidePolicy ? <span className="ml-1 text-[10px] text-rose-600">outside policy</span> : null}</td><td className="td">{m.creditNote ? <>{m.creditNote.noteNumber} <StatusBadge status={m.creditNote.status} /></> : <StatusBadge status={m.status} />}</td></tr>)}
+              {x.market.map((m) => <tr key={m.id}><td className="td whitespace-nowrap">{formatDate(m.createdAt)}</td><td className="td">{m.outlet.name}</td><td className="td">{m.product.name}</td><td className="td text-right">{m.qty}</td><td className="td">{m.reason}{m.outsidePolicy ? <span className="ml-1 text-[10px] text-rose-600">outside policy</span> : null}</td><td className="td">{m.creditNote ? <>{m.creditNote.noteNumber} <StatusBadge status={m.creditNote.status} /></> : <StatusBadge status={m.status} />}</td></tr>)}
               {x.market.length === 0 && <tr><td className="td text-slate-400" colSpan={6}>No returns in this period.</td></tr>}
             </tbody></table>
           <p className="px-4 py-2 text-[11px] text-slate-400"><Link className="text-blue-600 underline" href={rep("returns-register", `&dateFrom=${since}`)}>Open the returns register for this branch</Link></p>
@@ -81,7 +81,7 @@ export default async function BranchProfilePage({ params, searchParams }: { para
           <h3 className="border-b border-slate-100 px-4 py-3 text-sm font-semibold">Waiting for approval <span className="font-normal text-slate-400">({c.approvalsPending})</span></h3>
           <table className="w-full"><thead className="bg-slate-50"><tr><th className="th">Request</th><th className="th text-right">Amount</th><th className="th">Raised</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
-              {x.approvals.map((a) => <tr key={a.id}><td className="td">{typeLabel(a.type)}<p className="text-[10px] text-slate-400">{a.reason.slice(0, 80)}</p></td><td className="td text-right">{formatCurrency(a.amount)}</td><td className="td">{formatDate(a.createdAt)}</td></tr>)}
+              {x.approvals.map((a) => <tr key={a.id}><td className="td">{typeLabel(a.type)}<p className="text-[10px] text-slate-400">{a.reason.slice(0, 80)}</p></td><td className="td text-right">{formatCurrency(a.amount)}</td><td className="td whitespace-nowrap">{formatDate(a.createdAt)}</td></tr>)}
               {x.approvals.length === 0 && <tr><td className="td text-slate-400" colSpan={3}>Nothing waiting.</td></tr>}
             </tbody></table>
         </div>

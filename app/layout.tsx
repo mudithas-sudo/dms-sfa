@@ -1,10 +1,10 @@
 import type { Metadata } from "next";
-import { Barlow } from "next/font/google";
+import { Figtree } from "next/font/google";
 import "./globals.css";
 
-// Barlow comes from road and freight signage, which suits a system about trucks, cartons and delivery receipts.
-// One typeface everywhere: the same Barlow the navigation uses, for text, tables, titles and headline numbers.
-const barlow = Barlow({
+// Figtree is a friendly geometric sans with a clear peso sign, which suits a calm delivery-tracking interface.
+// One typeface everywhere: text, tables, navigation, titles and headline numbers.
+const figtree = Figtree({
   variable: "--font-body",
   subsets: ["latin"],
   weight: ["400", "500", "600", "700"],
@@ -17,7 +17,7 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: LayoutProps<"/">) {
   return (
-    <html lang="en" className={`${barlow.variable} h-full antialiased`}>
+    <html lang="en" className={`${figtree.variable} h-full antialiased`}>
       <body className="min-h-full flex flex-col">{children}</body>
     </html>
   );

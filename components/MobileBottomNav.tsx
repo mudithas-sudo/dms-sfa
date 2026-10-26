@@ -19,23 +19,24 @@ export default function MobileBottomNav() {
   const current = [...list].sort((a, b) => b.href.length - a.href.length).find((i) => (i.href === "/sfa" ? pathname === "/sfa" : pathname === i.href || pathname.startsWith(`${i.href}/`)))?.href;
 
   return (
-    <nav aria-label="Main" className="grid shrink-0 grid-cols-5 border-t border-slate-200 bg-white pb-[env(safe-area-inset-bottom)]">
-      {list.map((item) => {
-        const active = current === item.href;
-        const Icon = item.icon;
-        return (
-          <Link
-            key={item.href}
-            href={item.href}
-            aria-current={active ? "page" : undefined}
-            className={`relative flex min-h-[60px] flex-col items-center justify-center gap-0.5 text-xs active:bg-slate-50 ${active ? "font-semibold text-slate-900" : "font-medium text-slate-500"}`}
-          >
-            {active && <span className="absolute inset-x-4 top-0 h-1 rounded-b bg-leaf" />}
-            <Icon size={22} strokeWidth={active ? 2.4 : 2} />
-            {item.label}
-          </Link>
-        );
-      })}
+    <nav aria-label="Main" className="shrink-0 px-3 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-1">
+      <div className="grid grid-cols-5 gap-1 rounded-full bg-white p-1.5 shadow-md">
+        {list.map((item) => {
+          const active = current === item.href;
+          const Icon = item.icon;
+          return (
+            <Link
+              key={item.href}
+              href={item.href}
+              aria-current={active ? "page" : undefined}
+              className={`flex min-h-[52px] flex-col items-center justify-center gap-0.5 rounded-full text-[11px] transition ${active ? "bg-blue-600 font-semibold text-white" : "font-medium text-slate-500 active:bg-slate-50"}`}
+            >
+              <Icon size={20} strokeWidth={active ? 2.4 : 2} />
+              {item.label}
+            </Link>
+          );
+        })}
+      </div>
     </nav>
   );
 }

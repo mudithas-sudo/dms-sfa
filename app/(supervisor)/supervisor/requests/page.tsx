@@ -77,7 +77,7 @@ export default async function RequestsPage({ searchParams }: { searchParams: Pro
           <table className="w-full"><thead className="border-b border-slate-200 bg-slate-50"><tr><th className="th">Representative</th><th className="th">Category</th><th className="th">Amount</th><th className="th">Decision</th><th className="th">Status</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
               {expenses.filter((e) => e.status !== "pending").map((e) => (
-                <tr key={e.id}><td className="td">{name.get(e.userId)}</td><td className="td text-xs capitalize">{e.category}</td><td className="td">{formatCurrency(e.amount)}</td><td className="td text-xs text-slate-500">{e.approvedBy ?? "—"}{e.decisionNote ? ` — ${e.decisionNote}` : ""}</td><td className="td"><StatusBadge status={e.status} /></td></tr>
+                <tr key={e.id}><td className="td">{name.get(e.userId)}</td><td className="td text-xs capitalize">{e.category}</td><td className="td whitespace-nowrap">{formatCurrency(e.amount)}</td><td className="td text-xs text-slate-500">{e.approvedBy ?? "—"}{e.decisionNote ? ` — ${e.decisionNote}` : ""}</td><td className="td"><StatusBadge status={e.status} /></td></tr>
               ))}
             </tbody>
           </table>

@@ -56,7 +56,7 @@ export default async function TeamDashboardPage({ searchParams }: { searchParams
                   <td className="td">{v.length}</td>
                   <td className="td">{v.filter((x) => x.outcome === "order_taken").length}</td>
                   <td className="td">{o?._count ?? 0}</td>
-                  <td className="td">{formatCurrency(o?._sum.total ?? 0)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(o?._sum.total ?? 0)}</td>
                   <td className="td">
                     <div className="flex items-center gap-2">
                       <div className="h-2 w-24 overflow-hidden rounded-full bg-slate-100"><div className={`h-full rounded-full ${cov >= 80 ? "bg-emerald-500" : cov >= 40 ? "bg-amber-500" : "bg-rose-500"}`} style={{ width: `${cov}%` }} /></div>

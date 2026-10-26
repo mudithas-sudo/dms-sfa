@@ -4,7 +4,7 @@ export default function Banner({ error, notice }: { error?: string; notice?: str
   return (
     <div
       role={error ? "alert" : "status"}
-      className={`rounded-lg border px-4 py-3 text-sm ${
+      className={`rounded-2xl border px-4 py-3 text-sm ${
         error ? "border-rose-200 bg-rose-50 text-rose-800" : "border-emerald-200 bg-emerald-50 text-emerald-800"
       }`}
     >

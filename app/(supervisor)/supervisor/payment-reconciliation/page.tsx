@@ -90,7 +90,7 @@ export default async function PaymentReconciliationPage({ searchParams }: { sear
                       <td className="td font-medium text-slate-900">{head.chequeNumber}<p className="text-[11px] font-normal text-slate-400">{ref}</p></td>
                       <td className="td text-xs">{head.chequeBank}{head.chequeBranch ? ` · ${head.chequeBranch}` : ""}</td>
                       <td className="td text-xs">{head.chequeDate ? formatDate(head.chequeDate) : "—"}{pending && head.chequeDate && head.chequeDate > now ? " (post-dated)" : ""}</td>
-                      <td className="td">{formatCurrency(total)}</td>
+                      <td className="td whitespace-nowrap">{formatCurrency(total)}</td>
                       <td className="td"><StatusBadge status={bounced ? "reversed" : head.paymentStatus ?? "cleared"} /></td>
                       <td className="td text-right">
                         {!bounced && (
@@ -172,7 +172,7 @@ export default async function PaymentReconciliationPage({ searchParams }: { sear
                     <td className="td text-xs">{formatDateTime(e.entryDate)}</td>
                     <td className="td capitalize">{e.type.replace(/_/g, " ")}</td>
                     <td className="td text-xs capitalize">{e.method?.replace("_", " ") ?? "—"}{e.paymentStatus === "pending" ? " · pending" : ""}</td>
-                    <td className="td">{formatCurrency(Math.abs(e.amount))}</td>
+                    <td className="td whitespace-nowrap">{formatCurrency(Math.abs(e.amount))}</td>
                     <td className="td text-xs text-slate-500">{e.reference ?? "—"}</td>
                     <td className="td text-right">
                       {reversed ? (

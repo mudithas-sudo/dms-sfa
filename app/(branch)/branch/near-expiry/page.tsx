@@ -99,7 +99,7 @@ export default async function NearExpiryPage({ searchParams }: { searchParams: P
                 <td className="td">{c.warning}</td>
                 <td className="td">{c.critical}</td>
                 <td className="td">{c.expired}</td>
-                <td className="td">{formatCurrency(c.value)}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(c.value)}</td>
               </tr>
             ))}
             {byCategory.size === 0 && (
@@ -130,11 +130,11 @@ export default async function NearExpiryPage({ searchParams }: { searchParams: P
               <tr key={i.r.id}>
                 <td className="td font-medium text-slate-900"><Link className="hover:underline" href={`/branch/warehouse-stock/${i.r.productId}?lot=${encodeURIComponent(i.r.lotNumber)}`}>{i.r.product.name}</Link></td>
                 <td className="td text-xs">{i.r.lotNumber}</td>
-                <td className="td">{formatDate(i.r.expiryDate!)}</td>
+                <td className="td whitespace-nowrap">{formatDate(i.r.expiryDate!)}</td>
                 <td className={`td ${i.days < 0 ? "font-medium text-rose-600" : ""}`}>{i.days}</td>
                 <td className="td"><span className={`badge ${BANDS.find((b) => b.id === i.band)!.tone}`}>{BANDS.find((b) => b.id === i.band)!.label}</span></td>
                 <td className="td">{i.qty}</td>
-                <td className="td">{formatCurrency(i.value)}</td>
+                <td className="td whitespace-nowrap">{formatCurrency(i.value)}</td>
                 <td className="td text-right">
                   {i.band === "expired" && i.r.qtyGood - i.r.qtyReserved > 0 && (
                     <form action={moveExpiredStock}>

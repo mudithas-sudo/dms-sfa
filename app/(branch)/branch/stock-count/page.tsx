@@ -172,7 +172,7 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
                           <td className="td">{l.systemQty}</td>
                           <td className="td">{l.countedQty}{l.recountQty !== null ? ` → ${l.recountQty}` : ""}</td>
                           <td className="td font-medium">{fin - l.systemQty}</td>
-                          <td className="td">{formatCurrency((fin - l.systemQty) * (prod.get(l.productId)?.unitPrice ?? 0))}</td>
+                          <td className="td whitespace-nowrap">{formatCurrency((fin - l.systemQty) * (prod.get(l.productId)?.unitPrice ?? 0))}</td>
                         </tr>
                       );
                     })}

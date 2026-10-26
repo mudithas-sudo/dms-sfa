@@ -126,8 +126,8 @@ export default async function BranchDrilldownPage({
                   <td className="td font-medium text-slate-900">{o.orderNumber}</td>
                   <td className="td">{o.outlet.name}</td>
                   <td className="td">{o.salesperson.name}</td>
-                  <td className="td">{formatDate(o.orderDate)}</td>
-                  <td className="td">{formatCurrency(o.total)}</td>
+                  <td className="td whitespace-nowrap">{formatDate(o.orderDate)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(o.total)}</td>
                   <td className="td"><StatusBadge status={o.status} /></td>
                 </tr>
               ))}
@@ -154,8 +154,8 @@ export default async function BranchDrilldownPage({
                 <tr key={i.id}>
                   <td className="td font-medium text-slate-900">{i.invoiceNumber}</td>
                   <td className="td">{i.outlet.name}</td>
-                  <td className="td">{formatDate(i.invoiceDate)}</td>
-                  <td className="td">{formatCurrency(i.amount)}</td>
+                  <td className="td whitespace-nowrap">{formatDate(i.invoiceDate)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(i.amount)}</td>
                   <td className="td"><StatusBadge status={i.status} /></td>
                 </tr>
               ))}
@@ -181,7 +181,7 @@ export default async function BranchDrilldownPage({
                 <tr key={c.id}>
                   <td className="td font-medium text-slate-900">{c.claimNumber}</td>
                   <td className="td">{c.promotion.name}</td>
-                  <td className="td">{formatCurrency(c.amount)}</td>
+                  <td className="td whitespace-nowrap">{formatCurrency(c.amount)}</td>
                   <td className="td"><StatusBadge status={c.status} /></td>
                 </tr>
               ))}

@@ -63,7 +63,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
           <tbody className="divide-y divide-slate-100">
             {v.market.map((m) => (
               <tr key={m.id}>
-                <td className="td">{formatDate(m.createdAt)}</td><td className="td">{m.outlet.branch.name.replace(" Branch", "")}</td><td className="td">{m.outlet.name}</td><td className="td">{m.product.name}</td>
+                <td className="td whitespace-nowrap">{formatDate(m.createdAt)}</td><td className="td">{m.outlet.branch.name.replace(" Branch", "")}</td><td className="td">{m.outlet.name}</td><td className="td">{m.product.name}</td>
                 <td className="td text-right">{m.qty}</td><td className="td text-right">{formatCurrency(m.product.unitPrice * m.qty)}</td>
                 <td className="td">{m.reason}{m.outsidePolicy ? <span className="ml-1 text-[10px] text-rose-600">outside policy</span> : null}</td>
                 <td className="td">{m.creditNote ? <>{m.creditNote.noteNumber} <StatusBadge status={m.creditNote.status} /></> : <StatusBadge status={m.status} />}</td>
@@ -81,7 +81,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
           <tbody className="divide-y divide-slate-100">
             {v.central.map((s) => (
               <tr key={s.id}>
-                <td className="td">{formatDate(s.createdAt)}</td><td className="td">{s.returnNumber ?? "draft"}</td><td className="td">{s.warehouse.branch.name.replace(" Branch", "")}</td><td className="td">{s.product.name}</td>
+                <td className="td whitespace-nowrap">{formatDate(s.createdAt)}</td><td className="td">{s.returnNumber ?? "draft"}</td><td className="td">{s.warehouse.branch.name.replace(" Branch", "")}</td><td className="td">{s.product.name}</td>
                 <td className="td text-right">{s.qty}</td><td className={`td text-right ${s.qtyReceived != null && s.qtyReceived !== s.qty ? "text-rose-600" : ""}`}>{s.qtyReceived ?? "—"}</td>
                 <td className="td">{s.reason}{s.discrepancyNote ? <p className="text-[10px] text-rose-600">{s.discrepancyNote}</p> : null}</td>
                 <td className="td"><StatusBadge status={s.status} /></td><td className="td text-xs text-slate-500">{s.erpReference ?? "—"}</td>
@@ -99,7 +99,7 @@ export default async function ReturnsPage({ searchParams }: { searchParams: Prom
           <tbody className="divide-y divide-slate-100">
             {v.van.map((r) => (
               <tr key={r.id}>
-                <td className="td">{formatDate(r.createdAt)}</td><td className="td">{r.van.branch.name.replace(" Branch", "")}</td><td className="td">{r.van.code}</td><td className="td">{r.product.name}</td>
+                <td className="td whitespace-nowrap">{formatDate(r.createdAt)}</td><td className="td">{r.van.branch.name.replace(" Branch", "")}</td><td className="td">{r.van.code}</td><td className="td">{r.product.name}</td>
                 <td className="td text-right">{r.qtyDeclared ?? r.qty}</td><td className={`td text-right ${r.qtyReceived != null && r.qtyReceived !== (r.qtyDeclared ?? r.qty) ? "text-rose-600" : ""}`}>{r.qtyReceived ?? "—"}</td>
                 <td className="td">{r.condition}</td><td className="td"><StatusBadge status={r.status} /></td>
               </tr>
