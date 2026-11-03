@@ -7,6 +7,7 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import { getRepVan, dayStart, vanDayFigures } from "@/lib/van";
 import { getAllSettings, num } from "@/lib/settings";
 import { submitMobileEod } from "@/app/actions/van-actions";
+import { StockInputRow } from "@/components/StockInputRow";
 
 export default async function MobileEodPage({ searchParams }: { searchParams: Promise<{ error?: string; notice?: string }> }) {
   const { userId, branchId } = await getSession();
@@ -72,14 +73,20 @@ export default async function MobileEodPage({ searchParams }: { searchParams: Pr
         <form action={submitMobileEod} className="card space-y-3 p-4">
           <h3 className="text-sm font-semibold text-slate-900">1. Count the van</h3>
           <p className="text-xs text-slate-500">Enter the physical count for every product. A difference of more than {tol} unit(s) needs a reason before the day can close.</p>
-          {rows.map((s) => (
-            <div key={s.id} className="grid grid-cols-[1fr_56px_56px] items-center gap-1.5 text-xs">
-              <span className="truncate text-slate-700">{s.product.name} <span className="text-slate-400">(sys {s.qtyGood})</span></span>
-              <input className="input py-1 text-xs" type="number" min={0} name={`cg_${s.id}`} placeholder="good" required />
-              <input className="input py-1 text-xs" type="number" min={0} name={`cd_${s.id}`} defaultValue={s.qtyDamaged} title="Damaged" />
-              <input className="input col-span-3 py-1 text-xs" name={`why_${s.id}`} placeholder="Reason for any difference" />
-            </div>
-          ))}
+          <div className="divide-y divide-slate-100">
+            {rows.map((s) => (
+              <StockInputRow
+                key={s.id}
+                title={s.product.name}
+                note={`System ${s.qtyGood}`}
+                fields={[
+                  { name: `cg_${s.id}`, label: "Counted good", required: true },
+                  { name: `cd_${s.id}`, label: "Damaged", defaultValue: s.qtyDamaged },
+                ]}
+                remark={{ name: `why_${s.id}`, placeholder: "Reason for any difference" }}
+              />
+            ))}
+          </div>
           {rows.length === 0 && <p className="text-xs text-slate-400">Nothing is on the van.</p>}
 
           <h3 className="border-t border-slate-100 pt-3 text-sm font-semibold text-slate-900">2. Cash</h3>

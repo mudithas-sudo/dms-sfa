@@ -9,6 +9,7 @@ import { getRepVan, pendingAckByProduct, dayStart } from "@/lib/van";
 import { availableOf } from "@/lib/stock";
 import { suggestedVanQty } from "@/app/actions/sfa-actions";
 import { acknowledgeVanLoad, markVanDamaged, requestVanDamageReversal, cancelStockRequest, initiateVanReturn, submitVanCount } from "@/app/actions/van-actions";
+import { StockInputRow, Collapsible } from "@/components/StockInputRow";
 
 const DAMAGE_REASONS = ["Broken", "Leaking", "Expired", "Crushed packaging", "Customer return"];
 
@@ -71,26 +72,32 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
           {stock.map((s) => {
             const awaiting = Math.min(s.qtyGood, pend.get(s.productId) ?? 0);
             return (
-              <div key={s.id} className="px-2 py-2.5">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-sm font-medium text-slate-900">{s.product.name}</p>
-                    <p className="text-xs text-slate-500">
-                      {s.product.sku} · Lot {s.lotNumber} · Good {s.qtyGood}
-                      {awaiting > 0 && <span className="text-amber-700"> ({awaiting} awaiting your confirmation)</span>}
-                      {s.qtyDamaged > 0 && <span className="text-rose-600"> · Damaged {s.qtyDamaged}</span>}
-                      {s.qtyExpired > 0 && <span className="text-rose-600"> · Expired {s.qtyExpired}</span>}
-                    </p>
+              <div key={s.id} className="px-2 py-3">
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className="text-sm font-semibold leading-snug text-slate-900">{s.product.name}</p>
+                    <p className="text-xs text-slate-500">{s.product.sku} · Lot {s.lotNumber}</p>
+                    {(awaiting > 0 || s.qtyDamaged > 0 || s.qtyExpired > 0) && (
+                      <p className="mt-1 flex flex-wrap gap-1.5">
+                        {awaiting > 0 && <span className="badge badge-amber">{awaiting} awaiting your confirmation</span>}
+                        {s.qtyDamaged > 0 && <span className="badge badge-red">Damaged {s.qtyDamaged}</span>}
+                        {s.qtyExpired > 0 && <span className="badge badge-red">Expired {s.qtyExpired}</span>}
+                      </p>
+                    )}
                   </div>
+                  <p className="shrink-0 text-right">
+                    <span className="numeral block text-2xl text-slate-900">{s.qtyGood}</span>
+                    <span className="text-[11px] text-slate-500">good</span>
+                  </p>
                 </div>
                 {s.qtyGood > 0 && (
                   <details className="mt-1">
-                    <summary className="flex min-h-[44px] cursor-pointer items-center text-sm text-rose-600">Mark damaged…</summary>
+                    <summary className="inline-flex min-h-[40px] cursor-pointer list-none items-center rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-slate-600 [&::-webkit-details-marker]:hidden">Mark damaged…</summary>
                     <form action={markVanDamaged} className="mt-1 space-y-1.5">
                       <input type="hidden" name="stockBalanceId" value={s.id} />
                       <div className="flex gap-1.5">
-                        <input className="input w-16 py-1 text-xs" type="number" name="qty" min={1} max={s.qtyGood} placeholder="qty" required />
-                        <select className="input py-1 text-xs" name="reason" defaultValue="" required>
+                        <input className="input w-24 text-center" type="number" inputMode="numeric" name="qty" min={1} max={s.qtyGood} placeholder="Qty" required />
+                        <select className="input min-w-0 flex-1" name="reason" defaultValue="" required>
                           <option value="" disabled>Reason</option>
                           {DAMAGE_REASONS.map((r) => (
                             <option key={r} value={r}>{r}</option>
@@ -98,22 +105,22 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
                         </select>
                       </div>
                       <PhotoCapture label="Photo (required for large quantities)" max={1} />
-                      <button type="submit" className="btn-secondary w-full py-1 text-xs">Move to damaged</button>
+                      <button type="submit" className="btn-secondary w-full">Move to damaged</button>
                     </form>
                   </details>
                 )}
                 {(s.qtyDamaged > 0 || s.qtyExpired > 0) && (
                   <details className="mt-1">
-                    <summary className="cursor-pointer text-xs text-emerald-700">Back to good (needs approval)…</summary>
+                    <summary className="inline-flex min-h-[40px] cursor-pointer list-none items-center rounded-xl border border-slate-200 px-3.5 text-xs font-semibold text-blue-700 [&::-webkit-details-marker]:hidden">Back to good (needs approval)…</summary>
                     <form action={requestVanDamageReversal} className="mt-1 flex flex-wrap gap-1.5">
                       <input type="hidden" name="stockBalanceId" value={s.id} />
-                      <select className="input w-24 py-1 text-xs" name="from" defaultValue={s.qtyDamaged > 0 ? "damaged" : "expired"}>
+                      <select className="input w-32" name="from" defaultValue={s.qtyDamaged > 0 ? "damaged" : "expired"}>
                         {s.qtyDamaged > 0 && <option value="damaged">Damaged</option>}
                         {s.qtyExpired > 0 && <option value="expired">Expired</option>}
                       </select>
-                      <input className="input w-14 py-1 text-xs" type="number" name="qty" min={1} placeholder="qty" required />
-                      <input className="input min-w-0 flex-1 py-1 text-xs" name="reason" placeholder="Why it is fine" required />
-                      <button type="submit" className="btn-secondary py-1 text-xs">Request</button>
+                      <input className="input w-20 text-center" type="number" inputMode="numeric" name="qty" min={1} placeholder="Qty" required />
+                      <input className="input min-w-0 basis-full" name="reason" placeholder="Why it is fine" required />
+                      <button type="submit" className="btn-secondary">Request</button>
                     </form>
                   </details>
                 )}
@@ -124,8 +131,7 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
         </div>
       </div>
 
-      <div className="card p-4">
-        <h3 className="mb-2 text-sm font-semibold text-slate-900">Request stock</h3>
+      <Collapsible title="Request stock" hint="Ask the warehouse to top up the van">
         <p className="mb-2 text-xs text-slate-500">One active request per van and day. The warehouse supervisor may approve it in full, with reduced quantities, or reject it — you are notified on the device.</p>
         <StockRequestForm
           defaultDate={todayStr}
@@ -151,11 +157,10 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
             </div>
           ))}
         </div>
-      </div>
+      </Collapsible>
 
       {stock.length > 0 && (
-        <div className="card p-4">
-          <h3 className="mb-1 text-sm font-semibold text-slate-900">Return stock to the warehouse (unloading)</h3>
+        <Collapsible title="Return stock to the warehouse" hint="Unload what is left at the end of the day">
           <p className="mb-2 text-xs text-slate-500">Enter what you are handing back, by condition. It cannot exceed the van balance; the warehouse clerk counts it and confirms.</p>
           {returnsOpen.length > 0 && (
             <p className="mb-2 rounded-lg bg-amber-50 px-2 py-1.5 text-xs text-amber-800">
@@ -163,26 +168,31 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
             </p>
           )}
           <form action={initiateVanReturn} className="space-y-1.5">
-            {stock.map((s) => (
-              <div key={s.id} className="grid grid-cols-[1fr_52px_52px_52px] items-center gap-1.5 text-xs">
-                <span className="truncate text-slate-700">{s.product.name}</span>
-                <input className="input py-1 text-xs" type="number" min={0} max={s.qtyGood} name={`good_${s.id}`} placeholder={`G ${s.qtyGood}`} />
-                <input className="input py-1 text-xs" type="number" min={0} max={s.qtyDamaged} name={`damaged_${s.id}`} placeholder={`D ${s.qtyDamaged}`} disabled={s.qtyDamaged === 0} />
-                <input className="input py-1 text-xs" type="number" min={0} max={s.qtyExpired} name={`expired_${s.id}`} placeholder={`E ${s.qtyExpired}`} disabled={s.qtyExpired === 0} />
-              </div>
-            ))}
-            <p className="text-[10px] text-slate-400">G = good · D = damaged · E = expired</p>
-            <select className="input py-1 text-xs" name="reason" defaultValue="Unsold">
+            <div className="divide-y divide-slate-100">
+              {stock.map((s) => (
+                <StockInputRow
+                  key={s.id}
+                  title={s.product.name}
+                  note={`On van ${s.qtyGood + s.qtyDamaged + s.qtyExpired}`}
+                  fields={[
+                    { name: `good_${s.id}`, label: `Good (${s.qtyGood})`, max: s.qtyGood },
+                    { name: `damaged_${s.id}`, label: `Damaged (${s.qtyDamaged})`, max: s.qtyDamaged, disabled: s.qtyDamaged === 0 },
+                    { name: `expired_${s.id}`, label: `Expired (${s.qtyExpired})`, max: s.qtyExpired, disabled: s.qtyExpired === 0 },
+                  ]}
+                />
+              ))}
+            </div>
+            <label className="label" htmlFor="return-reason">Reason for the return</label>
+            <select id="return-reason" className="input" name="reason" defaultValue="Unsold">
               <option>Unsold</option><option>Damaged in transit</option><option>Expired</option><option>Customer return carried on the van</option><option>Other</option>
             </select>
             <button type="submit" className="btn-secondary w-full">Create return</button>
           </form>
-        </div>
+        </Collapsible>
       )}
 
       {stock.length > 0 && (
-        <div className="card p-4">
-          <h3 className="mb-1 text-sm font-semibold text-slate-900">Stock count</h3>
+        <Collapsible title="Stock count" hint="Count the van at any time">
           <p className="mb-2 text-xs text-slate-500">Count the van at the start of day, mid-day, end of day or any time. Enter every product (0 if none). A submitted count is final; differences beyond tolerance need a remark and go to your supervisor.</p>
           <form action={submitVanCount} className="space-y-1.5">
             <div className="flex gap-2">
@@ -191,17 +201,23 @@ export default async function VanStockPage({ searchParams }: { searchParams: Pro
               </select>
               <label className="flex items-center gap-1 text-xs text-slate-600"><input type="checkbox" name="blind" /> Blind</label>
             </div>
-            {stock.map((s) => (
-              <div key={s.id} className="grid grid-cols-[1fr_56px_56px] items-center gap-1.5 text-xs">
-                <span className="truncate text-slate-700">{s.product.name} <span className="text-slate-400">({s.qtyGood})</span></span>
-                <input className="input py-1 text-xs" type="number" min={0} name={`cg_${s.id}`} placeholder="good" required />
-                <input className="input py-1 text-xs" type="number" min={0} name={`cd_${s.id}`} defaultValue={s.qtyDamaged} />
-                <input className="input col-span-3 py-1 text-xs" name={`why_${s.id}`} placeholder="Remark (needed if the difference is beyond tolerance)" />
-              </div>
-            ))}
+            <div className="divide-y divide-slate-100">
+              {stock.map((s) => (
+                <StockInputRow
+                  key={s.id}
+                  title={s.product.name}
+                  note={`System ${s.qtyGood}`}
+                  fields={[
+                    { name: `cg_${s.id}`, label: "Counted good", required: true },
+                    { name: `cd_${s.id}`, label: "Damaged", defaultValue: s.qtyDamaged },
+                  ]}
+                  remark={{ name: `why_${s.id}`, placeholder: "Remark (needed if the difference is beyond tolerance)" }}
+                />
+              ))}
+            </div>
             <button type="submit" className="btn-secondary w-full">Submit count</button>
           </form>
-        </div>
+        </Collapsible>
       )}
     </div>
   );

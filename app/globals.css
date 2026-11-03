@@ -315,6 +315,40 @@ h2 {
 }
 .mobile-app select.input {
   padding-right: 2rem;
+  text-overflow: ellipsis;
+}
+/* A phone is too narrow for two text fields side by side: values and placeholders were cut off ("General Trad…").
+   Rows that hold a text box or a long choice stack to one column; short pairs (dates, numbers) stay side by side. */
+.mobile-app form .grid-cols-2:has(input:not([type="date"], [type="number"], [type="checkbox"], [type="hidden"], [type="file"], [type="radio"])) {
+  grid-template-columns: minmax(0, 1fr);
+}
+/* tick boxes are big enough to hit with a thumb, and use the accent */
+.mobile-app input[type="checkbox"],
+.mobile-app input[type="radio"] {
+  width: 1.375rem;
+  height: 1.375rem;
+  flex-shrink: 0;
+  accent-color: var(--color-blue-600);
+}
+.mobile-app label:has(> input[type="checkbox"]) {
+  min-height: 44px;
+  align-items: center;
+}
+/* numbers read best centred in their box */
+.mobile-app input[type="number"].input {
+  text-align: center;
+}
+/* the demo frame scrolls inside itself: a slim bar instead of the wide default one */
+.mobile-app #app-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-slate-300) transparent;
+}
+.mobile-app #app-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.mobile-app #app-scroll::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: var(--color-slate-300);
 }
 .mobile-app summary {
   -webkit-tap-highlight-color: transparent;
