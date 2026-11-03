@@ -4,15 +4,15 @@ import type { LucideIcon } from "lucide-react";
 // The icon sits in a pastel disc whose colour follows the tone.
 const TONE: Record<string, string> = {
   default: "text-slate-900",
-  good: "text-emerald-700",
+  good: "text-slate-900",
   warn: "text-amber-700",
-  bad: "text-rose-600",
+  bad: "text-blue-600",
 };
 const DISC: Record<string, string> = {
   default: "bg-blue-50 text-blue-600",
-  good: "bg-emerald-50 text-emerald-600",
-  warn: "bg-amber-50 text-amber-600",
-  bad: "bg-rose-50 text-rose-500",
+  good: "bg-slate-100 text-slate-600",
+  warn: "bg-slate-100 text-slate-600",
+  bad: "bg-blue-50 text-blue-600",
 };
 
 export default function KpiCard({

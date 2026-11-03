@@ -5,7 +5,7 @@ import { formatCurrency, formatDateTime } from "@/lib/format";
 import AutoRefresh from "@/components/dashboards/AutoRefresh";
 import StatusBadge from "@/components/StatusBadge";
 
-const TONE = { red: "border-transparent bg-rose-50 text-rose-700", amber: "border-transparent bg-amber-50 text-amber-700", blue: "border-transparent bg-blue-50 text-blue-700" };
+const TONE = { red: "border-transparent bg-blue-50 text-blue-800", amber: "border-transparent bg-slate-50 text-slate-700", blue: "border-transparent bg-slate-50 text-slate-700" };
 const pct = (a: number, b: number) => (b ? `${Math.round((a / b) * 100)}%` : "—");
 // A comparison with a near-empty earlier period says nothing, so it is not shown.
 const growthOf = (now: number, before: number) => (before > now * 0.1 ? Math.round(((now - before) / before) * 100) : null);

@@ -10,7 +10,7 @@ interface Pin {
   label?: string;
 }
 
-const COLOR: Record<string, string> = { visited: "#1d3280", skipped: "#8f98b0", planned: "#3558f0", other: "#b3bacd" };
+const COLOR: Record<string, string> = { visited: "#121212", skipped: "#9a9a9a", planned: "#e4420b", other: "#cfcfcf" };
 
 // A lightweight map: outlets are plotted as pins scaled to their bounding box around the representative's position.
 // With `route`, the pins are joined in order by a dashed line, like a planned run. `linkTo` makes each pin open a page;
@@ -39,10 +39,10 @@ export default function OutletMap({
   const line = pins.map((p) => `${x(p.lng).toFixed(1)},${y(p.lat).toFixed(1)}`).join(" ");
 
   return (
-    <svg viewBox={`0 0 ${w} ${h}`} className="w-full rounded-2xl bg-[#e9eef8] shadow-xs" role="img" aria-label="Map of outlets">
+    <svg viewBox={`0 0 ${w} ${h}`} className="w-full rounded-2xl bg-[#efefef] shadow-xs" role="img" aria-label="Map of outlets">
       {/* parks and water */}
-      <rect x={w * 0.08} y={h * 0.62} width={w * 0.22} height={h * 0.26} rx="14" fill="#dbeadf" />
-      <rect x={w * 0.66} y={h * 0.1} width={w * 0.24} height={h * 0.2} rx="14" fill="#d6e4f5" />
+      <rect x={w * 0.08} y={h * 0.62} width={w * 0.22} height={h * 0.26} rx="14" fill="#e4e4e4" />
+      <rect x={w * 0.66} y={h * 0.1} width={w * 0.24} height={h * 0.2} rx="14" fill="#e4e4e4" />
       {/* streets */}
       <g stroke="#ffffff" strokeLinecap="round" fill="none">
         <path d={`M0 ${h * 0.3} C ${w * 0.3} ${h * 0.22}, ${w * 0.6} ${h * 0.42}, ${w} ${h * 0.34}`} strokeWidth="9" />
@@ -51,12 +51,12 @@ export default function OutletMap({
         <path d={`M0 ${h * 0.78} L ${w} ${h * 0.7}`} strokeWidth="5" />
       </g>
       {route && pins.length > 1 && (
-        <polyline points={line} fill="none" stroke="#3558f0" strokeWidth="3" strokeDasharray="2 7" strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
+        <polyline points={line} fill="none" stroke="#e4420b" strokeWidth="3" strokeDasharray="2 7" strokeLinecap="round" strokeLinejoin="round" opacity="0.65" />
       )}
       {pins.map((p, i) => {
         const pin = (
           <g>
-            <circle cx={x(p.lng)} cy={y(p.lat) + 2} r="12" fill="#141828" opacity="0.12" />
+            <circle cx={x(p.lng)} cy={y(p.lat) + 2} r="12" fill="#121212" opacity="0.12" />
             <circle cx={x(p.lng)} cy={y(p.lat)} r="12" fill={p.color ?? COLOR[p.state ?? "other"]} stroke="white" strokeWidth="3" />
             <text x={x(p.lng)} y={y(p.lat) + 4} textAnchor="middle" fontSize="11" fill="white" fontWeight="700">{p.label ?? i + 1}</text>
             <title>{p.name}</title>
@@ -66,9 +66,9 @@ export default function OutletMap({
       })}
       {me && (
         <g>
-          <circle cx={x(me.lng)} cy={y(me.lat)} r="17" fill="#3558f0" opacity="0.18" />
-          <circle cx={x(me.lng)} cy={y(me.lat)} r="7" fill="#3558f0" stroke="white" strokeWidth="3" />
-          <text x={x(me.lng) + 12} y={y(me.lat) - 12} fontSize="10" fontWeight="700" fill="#2845cf">You</text>
+          <circle cx={x(me.lng)} cy={y(me.lat)} r="17" fill="#e4420b" opacity="0.18" />
+          <circle cx={x(me.lng)} cy={y(me.lat)} r="7" fill="#e4420b" stroke="white" strokeWidth="3" />
+          <text x={x(me.lng) + 12} y={y(me.lat) - 12} fontSize="10" fontWeight="700" fill="#bd3509">You</text>
         </g>
       )}
     </svg>

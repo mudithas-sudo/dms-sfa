@@ -8,6 +8,7 @@ import { allocateOrder, dispatchAllocations, nextInvoiceNumber, outletPosition, 
 //   1. deliveries waiting to be dispatched and on the road at every branch (backend orders, which is what the
 //      Deliveries screen lists), so the tracking cards and the delivery-run map have something to show
 //   2. today's field activity for every representative, anchored to UTC midnight like the app's own "today"
+//   3. this month's targets, copied from the latest month that has them
 // The orders are built with the same library functions the screens use, so stock, receivables and documents agree.
 
 const DAY = 86400000;
@@ -115,6 +116,18 @@ async function main() {
       }
     }
     console.log("Today's field activity added");
+  }
+
+  // ---------------------------------------------------------------- 3. This month's targets
+  // copied from the latest month that has them, so "against target" is never empty after a month ends
+  const period = `${now0.getUTCFullYear()}-${String(now0.getUTCMonth() + 1).padStart(2, "0")}`;
+  if ((await prisma.target.count({ where: { period } })) === 0) {
+    const latest = await prisma.target.findFirst({ orderBy: { period: "desc" }, select: { period: true } });
+    if (latest) {
+      const rows = await prisma.target.findMany({ where: { period: latest.period } });
+      await prisma.target.createMany({ data: rows.map((r) => ({ userId: r.userId, branchId: r.branchId, metric: r.metric, period, targetValue: r.targetValue })) });
+      console.log(`Targets for ${period} copied from ${latest.period} (${rows.length})`);
+    }
   }
 }
 

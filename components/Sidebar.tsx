@@ -140,41 +140,38 @@ export default function Sidebar({
   const pathname = usePathname();
 
   return (
-    <aside className="no-print sticky top-0 flex h-screen w-72 shrink-0 flex-col px-4 py-5">
-      <div className="flex items-center gap-3 px-2 pb-5">
-        <div className="flex h-10 w-10 items-center justify-center rounded-2xl bg-blue-600 text-sm font-bold text-white shadow-md">CF</div>
+    <aside className="no-print flex h-full w-72 shrink-0 flex-col px-3 py-5">
+      <div className="flex items-center gap-3 px-3 pb-6">
+        <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 text-white shadow-md">
+          <Boxes size={20} strokeWidth={2.2} />
+        </div>
         <div className="min-w-0">
-          <p className="font-display truncate text-base font-bold leading-tight text-slate-900">Company F and B</p>
+          <p className="font-display truncate text-lg font-bold uppercase leading-tight tracking-tight text-slate-900">Company F&amp;B</p>
           <p className="truncate text-xs leading-tight text-slate-500">{roleLabel}</p>
         </div>
       </div>
-      <nav className="flex-1 space-y-1 overflow-y-auto pr-1">
+      <nav className="flex-1 space-y-0.5 overflow-y-auto pr-1">
         {navItems.map((item) => {
           const active = pathname === item.href;
           const Icon = ICONS[item.icon];
           return (
             <div key={item.href}>
-              {item.section && <p className="px-3 pb-1.5 pt-5 text-xs font-semibold text-slate-400">{item.section}</p>}
+              {item.section && <p className="px-3 pb-1.5 pt-5 text-[13px] font-medium text-slate-900">{item.section}</p>}
               <Link
                 href={item.href}
                 aria-current={active ? "page" : undefined}
-                className={`flex items-center gap-3 rounded-full px-3 py-2 text-sm transition ${
-                  active ? "bg-white font-semibold text-slate-900 shadow-sm" : "font-medium text-slate-500 hover:bg-white/60 hover:text-slate-900"
+                className={`flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm transition ${
+                  active ? "bg-slate-200/70 font-semibold text-slate-900" : "font-normal text-slate-600 hover:bg-slate-100 hover:text-slate-900"
                 }`}
               >
-                <span className={`flex h-7 w-7 items-center justify-center rounded-full ${active ? "bg-blue-600 text-white" : "text-slate-400"}`}>
-                  <Icon size={16} />
-                </span>
+                <Icon size={18} strokeWidth={1.75} className={active ? "text-slate-900" : "text-slate-500"} />
                 {item.label}
               </Link>
             </div>
           );
         })}
       </nav>
-      <div className="mt-4 rounded-2xl bg-white/70 p-4 text-xs leading-relaxed text-slate-500">
-        <p className="font-semibold text-slate-700">Prototype build</p>
-        Not for production use.
-      </div>
+      <p className="mt-4 px-3 text-xs text-slate-400">Prototype build · not for production use</p>
     </aside>
   );
 }
