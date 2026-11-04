@@ -56,7 +56,7 @@ export default function BackendOrderForm({ outlets, products }: { outlets: Outle
   const lineOf = (id: string) => preview?.lines.find((l) => l.productId === id);
 
   return (
-    <form action={createBackendOrder} className="grid gap-6 lg:grid-cols-[2fr_1fr]">
+    <form action={createBackendOrder} className="grid gap-6 lg:grid-cols-[2fr_1fr] [&>*]:min-w-0">
       <div className="space-y-4">
         <div className="card p-5">
           <div className="grid gap-3 md:grid-cols-2">
@@ -96,7 +96,7 @@ export default function BackendOrderForm({ outlets, products }: { outlets: Outle
             <h3 className="text-sm font-semibold text-slate-900">Products</h3>
             <input className="input max-w-xs" placeholder="Search by code or name" value={search} onChange={(e) => setSearch(e.target.value)} />
           </div>
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[420px] overflow-auto">
             <table className="w-full text-sm">
               <thead className="sticky top-0 border-b border-slate-200 bg-white">
                 <tr>

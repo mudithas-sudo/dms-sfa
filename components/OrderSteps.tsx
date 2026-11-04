@@ -10,7 +10,7 @@ export interface StageTile {
 
 export function StepTiles({ steps, current }: { steps: StageTile[]; current: number }) {
   return (
-    <ol className="grid grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] gap-3">
+    <ol className="grid grid-cols-2 gap-2 sm:grid-cols-[repeat(auto-fit,minmax(11rem,1fr))] sm:gap-3">
       {steps.map((s, i) => {
         const state = i < current ? "done" : i === current ? "current" : "todo";
         const Icon = s.icon;

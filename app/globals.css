@@ -237,13 +237,13 @@ h2 {
 
   /* step tiles: icon square, title, note; the current one is outlined in the accent */
   .step-tile {
-    @apply flex items-center gap-3 rounded-2xl border border-slate-200 bg-white p-2.5 pr-4;
+    @apply flex items-center gap-2 rounded-2xl border border-slate-200 bg-white p-2 pr-3 sm:gap-3 sm:p-2.5 sm:pr-4;
   }
   .step-tile[data-state="current"] {
     @apply border-blue-600;
   }
   .step-tile .step-icon {
-    @apply flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400;
+    @apply flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-400 sm:h-11 sm:w-11;
   }
   .step-tile[data-state="done"] .step-icon,
   .step-tile[data-state="current"] .step-icon {
@@ -333,7 +333,8 @@ h2 {
     grid-column: 1 / -1;
   }
   /* wide tables keep readable columns and scroll sideways inside their card, instead of wrapping every word */
-  .overflow-x-auto > table {
+  .overflow-x-auto > table,
+  .overflow-auto > table {
     min-width: 40rem;
   }
 }
