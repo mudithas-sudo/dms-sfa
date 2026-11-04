@@ -332,6 +332,10 @@ h2 {
   form .col-span-4 {
     grid-column: 1 / -1;
   }
+  /* wide tables keep readable columns and scroll sideways inside their card, instead of wrapping every word */
+  .overflow-x-auto > table {
+    min-width: 40rem;
+  }
 }
 
 /* Field app (mobile): comfortable touch targets, and 16px form text so phones do not zoom the page when a field is focused. */
