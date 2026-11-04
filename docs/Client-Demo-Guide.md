@@ -1,18 +1,18 @@
 # Client demonstration guide — Company F and B DMS & SFA
 
-Live prototype: https://dms-sfa-6uoh.vercel.app/admin
+Live prototype: https://dms-sfa-6uoh.vercel.app/start — the **Start here** page: pick a person in one click, or follow one of six end-to-end scenarios (order to cash, van sale, new customer, market return, restock the van, close the day). Share this link with the customer for their own testing.
 Allow about 40 minutes: 30 of demonstration, 10 for questions. Every step below uses data that is already loaded.
 
 ## Before the meeting
 
 | When | Do this |
 |---|---|
-| Morning of the demo | From the project folder run `npx tsx prisma/seed-showcase.ts`. It tops up deliveries waiting and on the road at every branch, and today's field activity for every representative (so "Team Dashboard — Today" is not empty). Safe to run more than once. Takes a few minutes. |
+| Morning of the demo | From the project folder run `npx tsx prisma/seed-showcase.ts`. It restocks every branch warehouse, tops up deliveries waiting and on the road, adds today's field activity for every representative (so "Team Dashboard — Today" is not empty), copies targets into the new month, and settles visits and van days left open on earlier days (which would otherwise block check-in and van loading). Safe to run more than once. Takes a few minutes. |
 | 10 minutes before | Open the app and click through three or four screens. The database sleeps when idle and the first page can take several seconds to wake it; after that, pages load in about a second. |
 | Set up two windows | Window 1: normal width for the desktop screens. Window 2: narrow (or the browser's phone view) at `/sfa` for the field app. |
-| After a rehearsal | Rerun the command above. "Record delivery" uses up a waiting delivery, and the command puts them back. |
+| After a rehearsal, or after the customer has been testing | Rerun the command above. Testing uses up stock and waiting deliveries, and the command puts them back. |
 
-Switching person: use the three pills at the top right (role, branch, user). In the field app they are under "Demo: switch role or user".
+Switching person: from the Start page, or from the menu under the name at the top right (role, branch, user). In the field app it is under "Demo: switch role or user". Both menus link back to the Start page.
 
 | Role | Branch | User |
 |---|---|---|
@@ -22,7 +22,9 @@ Switching person: use the three pills at the top right (role, branch, user). In 
 | Sales Representative | Cebu | Rico Delos Santos (5 stops today) or Josephine Tan |
 | Management | all | (read-only dashboards) |
 
-Field app PIN for every representative: **1234**.
+Field app PIN for every representative: **1234**. When several people test at once, each should take a different representative (the Start page offers Nina Abad and Rico Delos Santos besides Josephine Tan): a rep can have only one visit open and one stock request per day.
+
+Photos: on a computer without a camera, use **Demo: use a sample photo** next to any photo button.
 
 ## The story (one thread, told in this order)
 

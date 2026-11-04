@@ -66,7 +66,7 @@ const SCENARIOS: { title: string; why: string; steps: { who: Who; href: string; 
     title: "5. Restock the van",
     why: "The rep asks for stock, the warehouse loads it, the rep confirms.",
     steps: [
-      { who: "rep", href: "/sfa/van-stock", text: "Open Request stock and ask for products." },
+      { who: "rep", href: "/sfa/van-stock", text: "Open Request stock and ask for products (one request per van per day — if one is already active, skip to step 2)." },
       { who: "ops", href: "/branch/replenishment-requests", text: "Approve the request (in full or reduced)." },
       { who: "ops", href: "/branch/van-loading", text: "Load the van." },
       { who: "rep", href: "/sfa/van-stock", text: "Confirm what was received." },
@@ -74,7 +74,7 @@ const SCENARIOS: { title: string; why: string; steps: { who: Who; href: string; 
   },
   {
     title: "6. Close the day",
-    why: "Count the van and hand over cash; differences go to the supervisor.",
+    why: "Count the van and hand over cash; differences go to the supervisor. Best done last.",
     steps: [
       { who: "rep", href: "/sfa/eod", text: "Count the van and declare the cash." },
       { who: "ops", href: "/branch/eod-reconciliation", text: "The branch confirms the reconciliation." },
