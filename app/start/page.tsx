@@ -111,7 +111,7 @@ export default async function StartPage() {
 
   return (
     <div className="p-2.5 sm:p-5">
-      <div className="mx-auto max-w-6xl rounded-[28px] border border-slate-200 bg-white p-6 sm:p-10">
+      <div className="mx-auto max-w-6xl rounded-3xl border border-slate-200 bg-white p-4 sm:rounded-[28px] sm:p-10">
         <div className="flex items-center gap-3">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-600 text-white"><Boxes size={22} /></div>
           <div>
@@ -120,7 +120,7 @@ export default async function StartPage() {
           </div>
         </div>
 
-        <h1 className="mt-8 text-3xl font-semibold text-slate-900">Start here</h1>
+        <h1 className="mt-6 text-xl font-semibold text-slate-900 sm:mt-8 sm:text-2xl">Start here</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-500">
           Everyone uses the same sample data{branch ? ` for ${branch.name}` : ""}. Choose a person to look around, or follow a scenario below: each step opens the right screen as the right person.
           You can switch person at any time from the menu at the top right (in the phone app: “Demo: switch role or user”), and come back here from that menu.

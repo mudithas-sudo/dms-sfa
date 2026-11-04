@@ -77,6 +77,15 @@
   --color-rose-800: #0f0f0f;
   --color-rose-900: #0a0a0a;
 
+  /* type scale (root 15px): body 13.5px, small 12px, headings 16.5–22px — compact, like a working console */
+  --text-xs: 0.8rem;
+  --text-sm: 0.9rem;
+  --text-base: 1rem;
+  --text-lg: 1.1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.45rem;
+  --text-3xl: 1.7rem;
+
   /* corners: fields and buttons 12, cards 16, panels 24 */
   --radius-sm: 6px;
   --radius-md: 8px;
@@ -101,6 +110,11 @@
   --background: #efefef;
   --foreground: #121212;
   --font-heading: var(--font-body);
+}
+
+html {
+  font-size: 15px;
+  -webkit-text-size-adjust: 100%;
 }
 
 body {
@@ -212,13 +226,13 @@ h2 {
 
   /* the app frame: a light grey shell around a white work panel */
   .app-frame {
-    @apply flex h-[calc(100vh-2.5rem)] overflow-hidden rounded-[28px] border border-slate-200 bg-slate-50;
+    @apply flex h-[100dvh] overflow-hidden bg-slate-50 sm:h-[calc(100dvh-2.5rem)] sm:rounded-[28px] sm:border sm:border-slate-200;
   }
   .work-panel {
-    @apply m-2.5 ml-0 flex min-w-0 flex-1 flex-col overflow-hidden rounded-3xl border border-slate-200 bg-white;
+    @apply flex min-w-0 flex-1 flex-col overflow-hidden bg-white sm:m-2.5 sm:rounded-3xl sm:border sm:border-slate-200 lg:ml-0;
   }
   .top-bar {
-    @apply mx-4 mt-4 flex min-h-14 items-center gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2;
+    @apply mx-3 mt-3 flex min-h-14 items-center gap-2 rounded-2xl border border-slate-200 bg-slate-50 px-3 py-2 sm:mx-4 sm:mt-4 sm:gap-3 sm:px-4;
   }
 
   /* step tiles: icon square, title, note; the current one is outlined in the accent */
@@ -264,7 +278,7 @@ h2 {
 .scoreboard > .card > p:nth-child(2) {
   margin-top: 0.5rem;
   font-family: var(--font-heading), ui-sans-serif, system-ui, sans-serif;
-  font-size: 1.7rem;
+  font-size: 1.35rem;
   font-weight: 600;
   line-height: 1.1;
   letter-spacing: -0.02em;
@@ -304,14 +318,17 @@ h2 {
 }
 
 /* Field app (mobile): comfortable touch targets, and 16px form text so phones do not zoom the page when a field is focused. */
+/* 16px form text is what stops phones zooming the page on focus; the boxes stay compact around it */
 .mobile-app .input {
-  min-height: 46px;
+  min-height: 44px;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
   font-size: 16px;
 }
 .mobile-app .btn-primary,
 .mobile-app .btn-secondary,
 .mobile-app .btn-danger {
-  min-height: 46px;
+  min-height: 44px;
 }
 .mobile-app select.input {
   padding-right: 2rem;

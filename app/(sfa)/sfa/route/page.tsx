@@ -60,7 +60,7 @@ export default async function RoutePlanPage({ searchParams }: { searchParams: Pr
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-bold text-slate-900">Today&apos;s Beat Plan</h2>
+        <h2 className="text-base font-bold text-slate-900">Today&apos;s Beat Plan</h2>
         <p className="text-xs text-slate-500">{rep?.route?.name ?? "No route assigned"} · {rows.length} stops today ({today}) · {counts.visited} visited · {counts.skipped} skipped · {counts.planned} to go{counts.missed ? ` · ${counts.missed} missed` : ""}</p>
       </div>
       <Banner error={error} notice={notice} />

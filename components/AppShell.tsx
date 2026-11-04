@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import Link from "next/link";
 import { Bell, Building2, Warehouse, ShieldCheck, BarChart3, LayoutDashboard, ChevronDown } from "lucide-react";
 import SearchBox from "@/components/SearchBox";
+import NavDrawer from "@/components/NavDrawer";
 import { switcherLists } from "@/lib/switcher-lists";
 import Forbidden from "@/components/Forbidden";
 import MfaGate from "@/components/MfaGate";
@@ -49,14 +50,17 @@ export default async function AppShell({
   const initials = person.split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
-    <div className="p-2.5 sm:p-5">
+    <div className="sm:p-5">
       <div className="app-frame">
-        <Sidebar navItems={navItems} roleLabel={roleLabel(role)} />
+        <div className="hidden lg:flex">
+          <Sidebar navItems={navItems} roleLabel={roleLabel(role)} />
+        </div>
         <div className="work-panel">
           <header className="top-bar">
-            <TitleIcon size={20} strokeWidth={1.75} className="shrink-0 text-slate-900" aria-hidden="true" />
+            <NavDrawer navItems={navItems} roleLabel={roleLabel(role)} />
+            <TitleIcon size={20} strokeWidth={1.75} className="hidden shrink-0 text-slate-900 lg:block" aria-hidden="true" />
             <div className="flex min-w-0 items-baseline gap-2">
-              <h1 className="truncate text-xl font-semibold leading-tight text-slate-900">{title}</h1>
+              <h1 className="truncate text-base font-semibold leading-tight text-slate-900 sm:text-lg">{title}</h1>
               {activeBranch && <span className="hidden truncate text-sm text-slate-500 lg:inline">{activeBranch.name}</span>}
             </div>
             <div className="no-print ml-auto flex items-center gap-2.5">
@@ -83,7 +87,7 @@ export default async function AppShell({
               </details>
             </div>
           </header>
-          <main className="flex-1 overflow-y-auto px-8 pb-10 pt-6">{needsMfa ? <MfaGate userName={me!.name} roleName={roleLabel(role)} back={ROLES.find((r) => r.id === role)?.homePath ?? "/"} /> : allowed ? children : <Forbidden role={role} area={title} />}</main>
+          <main className="flex-1 overflow-y-auto px-4 pb-10 pt-4 sm:px-6 sm:pt-6 lg:px-8">{needsMfa ? <MfaGate userName={me!.name} roleName={roleLabel(role)} back={ROLES.find((r) => r.id === role)?.homePath ?? "/"} /> : allowed ? children : <Forbidden role={role} area={title} />}</main>
         </div>
       </div>
     </div>

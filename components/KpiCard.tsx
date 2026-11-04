@@ -32,7 +32,7 @@ export default function KpiCard({
     <div className="card flex items-start justify-between gap-3 p-5">
       <div className="min-w-0">
         <p className="text-sm font-medium text-slate-500">{label}</p>
-        <p className={`numeral mt-2 text-3xl ${TONE[tone]}`}>{value}</p>
+        <p className={`numeral mt-2 text-2xl ${TONE[tone]}`}>{value}</p>
         {sublabel && <p className="mt-2 text-xs text-slate-500">{sublabel}</p>}
       </div>
       {Icon && (

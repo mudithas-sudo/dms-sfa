@@ -88,7 +88,7 @@ export default async function OrderDetailPage({
 
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h2 className="text-3xl font-semibold text-slate-900">Order ID : {order.orderNumber}</h2>
+          <h2 className="text-xl font-semibold text-slate-900 sm:text-2xl">Order ID : {order.orderNumber}</h2>
           <p className="mt-1.5 text-sm text-slate-500">
             {order.outlet.name} · {order.source === "backend" ? "Backend entry" : "From the SFA app"} ({order.orderType === "van_sale" ? "van sale" : "pre-sales"}) by {order.salesperson.name} · {formatDateTime(order.orderDate)}
           </p>

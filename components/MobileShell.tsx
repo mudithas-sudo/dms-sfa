@@ -35,15 +35,15 @@ export default async function MobileShell({
         <header className="shrink-0 px-4 pb-1 pt-4">
           <div className="flex items-center justify-between gap-3">
             <div className="flex min-w-0 items-center gap-3">
-              <span className="avatar h-11 w-11 bg-blue-600 text-white">{initials}</span>
+              <span className="avatar h-10 w-10 bg-blue-600 text-white">{initials}</span>
               <div className="min-w-0">
-                <p className="font-display truncate text-lg font-bold leading-tight text-slate-900">{title}</p>
+                <p className="font-display truncate text-base font-bold leading-tight text-slate-900">{title}</p>
                 <p className="truncate text-xs text-slate-500">
                   {currentUser?.name ?? "Sales Rep"}{currentUser?.branch?.name ? ` · ${currentUser.branch.name}` : ""}
                 </p>
               </div>
             </div>
-            <Link href="/notifications" aria-label="Notifications" className="btn-round h-11 w-11">
+            <Link href="/notifications" aria-label="Notifications" className="btn-round h-10 w-10">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
             </Link>
           </div>
