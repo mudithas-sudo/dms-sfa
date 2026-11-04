@@ -102,7 +102,7 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
           </div>
           <form action={active.status === "open" ? submitStockCount : submitRecount}>
             <input type="hidden" name="countId" value={active.id} />
-            <table className="w-full">
+            <div className="overflow-x-auto"><table className="w-full">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="th">Product</th>
@@ -131,7 +131,7 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
                     </tr>
                   ))}
               </tbody>
-            </table>
+            </table></div>
             <button className="btn-primary mt-4" type="submit">{active.status === "open" ? "Submit count" : "Submit recount"}</button>
           </form>
         </div>
@@ -151,7 +151,7 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
                     <button className="btn-danger px-3 py-1 text-xs" type="submit" name="decision" value="rejected">Reject</button>
                   </form>
                 </div>
-                <table className="mt-2 w-full text-sm">
+                <div className="overflow-x-auto"><table className="mt-2 w-full text-sm">
                   <thead className="border-b border-slate-200">
                     <tr>
                       <th className="th">Product</th>
@@ -177,7 +177,7 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
                       );
                     })}
                   </tbody>
-                </table>
+                </table></div>
               </div>
             ))}
           </div>

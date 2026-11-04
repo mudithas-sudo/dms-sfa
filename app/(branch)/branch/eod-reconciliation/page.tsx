@@ -62,7 +62,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
 
           {rec ? (
             <>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto"><table className="w-full text-sm">
                 <thead className="border-b border-slate-200">
                   <tr><th className="th">Product</th><th className="th">Opening</th><th className="th">Loaded</th><th className="th">Sold</th><th className="th">Returned</th><th className="th">Adj.</th><th className="th">Expected</th><th className="th">Counted</th><th className="th">Variance</th><th className="th"></th></tr>
                 </thead>
@@ -77,7 +77,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
               {rec.cause && <p className="mt-2 text-xs text-slate-600">Cause: {rec.cause}{rec.approvedBy ? ` · by ${rec.approvedBy}` : ""}</p>}
               {rec.status === "pending_ack" && (
                 <form action={acknowledgeReconciliation} className="mt-3"><input type="hidden" name="id" value={rec.id} /><button className="btn-primary" type="submit">Acknowledge variance within tolerance &amp; close</button></form>
@@ -105,7 +105,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
             <form action={recordVanClosingCount} className="mt-4 border-t border-slate-100 pt-4">
               <input type="hidden" name="vanId" value={van.id} />
               <h4 className="mb-2 text-sm font-semibold text-slate-900">Enter / replace the closing count</h4>
-              <table className="w-full text-sm">
+              <div className="overflow-x-auto"><table className="w-full text-sm">
                 <thead className="border-b border-slate-200"><tr><th className="th">Product</th><th className="th">Lot</th><th className="th">System (good)</th><th className="th">Counted good</th><th className="th">Remark (beyond tolerance)</th></tr></thead>
                 <tbody className="divide-y divide-slate-100">
                   {rows.map((r) => (
@@ -116,7 +116,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
                     </tr>
                   ))}
                 </tbody>
-              </table>
+              </table></div>
               <button className="btn-secondary mt-3" type="submit">Reconcile</button>
             </form>
           )}
@@ -125,7 +125,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
 
       <div className="card overflow-x-auto">
         <div className="border-b border-slate-100 px-4 py-3 text-sm font-semibold text-slate-900">Exceptions list — unresolved or carried over</div>
-        <table className="w-full">
+        <div className="overflow-x-auto"><table className="w-full">
           <thead className="border-b border-slate-200 bg-slate-50"><tr><th className="th">Day</th><th className="th">Van</th><th className="th">Counted by</th><th className="th">Cause</th><th className="th">Status</th><th className="th"></th></tr></thead>
           <tbody className="divide-y divide-slate-100">
             {exceptions.map((e) => (
@@ -142,7 +142,7 @@ export default async function EodReconciliationPage({ searchParams }: { searchPa
               <tr><td className="td text-slate-400" colSpan={6}>No open exceptions — every reconciliation is closed. {formatDateTime(new Date())}</td></tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

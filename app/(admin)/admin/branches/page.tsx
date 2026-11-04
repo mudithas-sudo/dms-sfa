@@ -19,7 +19,7 @@ export default async function BranchesPage() {
       </div>
 
       <div className="card overflow-hidden">
-        <table className="w-full">
+        <div className="overflow-x-auto"><table className="w-full">
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
               <th className="th">Name</th>
@@ -54,7 +54,7 @@ export default async function BranchesPage() {
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

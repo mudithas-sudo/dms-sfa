@@ -69,7 +69,7 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
           {shown.reprintCount > 0 && <p className="mb-2 hidden text-xs font-semibold uppercase text-slate-500 print:block">Reprint — copy #{shown.reprintCount}</p>}
           <form action={recordPicks}>
             <input type="hidden" name="id" value={shown.id} />
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="border-b border-slate-200 bg-slate-50">
                 <tr>
                   <th className="th">Location</th>
@@ -120,7 +120,7 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
                   );
                 })}
               </tbody>
-            </table>
+            </table></div>
             {shown.status !== "picked" && shown.status !== "cancelled" && (
               <div className="mt-3 flex items-center gap-3 no-print">
                 <button className="btn-primary" type="submit">Record picks</button>
@@ -150,7 +150,7 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
           </form>
         </div>
         <form action={generatePicklist}>
-          <table className="w-full text-sm">
+          <div className="overflow-x-auto"><table className="w-full text-sm">
             <thead className="border-b border-slate-200 bg-slate-50">
               <tr>
                 <th className="th"></th>
@@ -180,13 +180,13 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
                 </tr>
               )}
             </tbody>
-          </table>
+          </table></div>
           {orders.length > 0 && <button className="btn-primary mt-3" type="submit">Generate picklist for the selected orders</button>}
         </form>
       </div>
 
       <div className="card overflow-x-auto no-print">
-        <table className="w-full">
+        <div className="overflow-x-auto"><table className="w-full">
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr>
               <th className="th">Picklist</th>
@@ -214,7 +214,7 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
               </tr>
             )}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );

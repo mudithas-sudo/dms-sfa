@@ -63,7 +63,7 @@ export default async function DeliveriesPage({ searchParams }: { searchParams: P
                   <p className="truncate text-sm font-bold text-slate-900">{i.outlet.name}</p>
                   <p className="flex items-center gap-1 truncate text-xs text-slate-500"><MapPin size={12} className="shrink-0" />{i.outlet.address}</p>
                 </div>
-                <div className="text-right">
+                <div className="w-full pl-14 sm:w-auto sm:pl-0 sm:text-right">
                   <p className="text-sm font-bold text-slate-900">{formatCurrency(i.amount)}</p>
                   <p className="text-xs text-slate-500">{i.invoiceNumber} · {i.salesOrder.orderNumber}</p>
                 </div>

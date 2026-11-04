@@ -419,6 +419,10 @@ h2 {
     overflow: visible !important;
     padding: 0 !important;
   }
+  .overflow-x-auto,
+  .overflow-auto {
+    overflow: visible !important;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {

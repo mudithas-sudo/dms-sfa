@@ -38,14 +38,14 @@ export default async function VanLoadingPage({ searchParams }: { searchParams: P
           <div className="no-print mb-3 flex items-center justify-between"><h3 className="text-sm font-semibold text-slate-900">Loading document</h3><PrintButton /></div>
           <p className="text-base font-semibold text-slate-900">{printing.loadNumber} — {printing.van.code} ({printing.van.driverName})</p>
           <p className="text-sm text-slate-600">Prepared by {printing.loadedBy} · {formatDateTime(printing.loadedAt)} · Acknowledged by rep: {printing.confirmedAt ? formatDateTime(printing.confirmedAt) : "not yet"}</p>
-          <table className="mt-2 w-full text-sm">
+          <div className="overflow-x-auto"><table className="mt-2 w-full text-sm">
             <thead className="border-b border-slate-200"><tr><th className="th">Product</th><th className="th">Lot</th><th className="th">Expiry</th><th className="th">Approved</th><th className="th">Loaded</th><th className="th">Rep confirmed</th></tr></thead>
             <tbody className="divide-y divide-slate-100">
               {printing.lines.map((l) => (
                 <tr key={l.id}><td className="td">{pname.get(l.productId)}</td><td className="td">{l.lotNumber}</td><td className="td">{expiry(l.productId, l.lotNumber) ? formatDate(expiry(l.productId, l.lotNumber)!) : "—"}</td><td className="td">{l.qtyApproved ?? l.qty}</td><td className="td">{l.qty}</td><td className="td">{l.qtyAcknowledged ?? "—"}</td></tr>
               ))}
             </tbody>
-          </table>
+          </table></div>
         </div>
       )}
 
@@ -58,7 +58,7 @@ export default async function VanLoadingPage({ searchParams }: { searchParams: P
               <p className="text-sm font-medium text-slate-900">{l.loadNumber} <span className="font-normal text-slate-500">· {l.van.code} · {l.van.driverName} · approved by {l.approvedBy}</span></p>
               <StatusBadge status={l.status} />
             </div>
-            <table className="w-full text-sm">
+            <div className="overflow-x-auto"><table className="w-full text-sm">
               <thead className="border-b border-slate-200"><tr><th className="th">Product</th><th className="th">FEFO lot</th><th className="th">Expiry</th><th className="th">Approved</th><th className="th">Loaded</th><th className="th">Variance reason</th></tr></thead>
               <tbody className="divide-y divide-slate-100">
                 {l.lines.map((ln) => (
@@ -72,7 +72,7 @@ export default async function VanLoadingPage({ searchParams }: { searchParams: P
                   </tr>
                 ))}
               </tbody>
-            </table>
+            </table></div>
             <div className="mt-3 flex gap-2">
               <button className="btn-primary" type="submit">Post loading</button>
               <button className="btn-secondary" type="submit" formAction={cancelVanLoad}>Cancel loading</button>
@@ -83,7 +83,7 @@ export default async function VanLoadingPage({ searchParams }: { searchParams: P
       </div>
 
       <div className="card overflow-x-auto no-print">
-        <table className="w-full">
+        <div className="overflow-x-auto"><table className="w-full">
           <thead className="border-b border-slate-200 bg-slate-50">
             <tr><th className="th">Loading</th><th className="th">Van</th><th className="th">Units</th><th className="th">Prepared</th><th className="th">Rep acknowledged</th><th className="th">Status</th><th className="th"></th></tr>
           </thead>
@@ -100,7 +100,7 @@ export default async function VanLoadingPage({ searchParams }: { searchParams: P
               </tr>
             ))}
           </tbody>
-        </table>
+        </table></div>
       </div>
     </div>
   );
