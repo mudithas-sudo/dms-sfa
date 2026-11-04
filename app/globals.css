@@ -317,6 +317,23 @@ h2 {
   box-shadow: 0 2px 8px rgb(18 18 18 / 0.12);
 }
 
+/* Phones: form rows written for a wide screen (two to four fields side by side) stack, so no field is squeezed
+   below a usable width. Rows of short numbers or dates keep two per line. */
+@media (max-width: 639px) {
+  form .grid-cols-2:has(input:not([type="date"], [type="number"], [type="checkbox"], [type="hidden"], [type="radio"]), select),
+  form .grid-cols-3:has(input:not([type="checkbox"], [type="hidden"], [type="radio"]), select) {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  form .grid-cols-4:has(input, select) {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  form .col-span-2,
+  form .col-span-3,
+  form .col-span-4 {
+    grid-column: 1 / -1;
+  }
+}
+
 /* Field app (mobile): comfortable touch targets, and 16px form text so phones do not zoom the page when a field is focused. */
 /* 16px form text is what stops phones zooming the page on focus; the boxes stay compact around it */
 .mobile-app .input {
