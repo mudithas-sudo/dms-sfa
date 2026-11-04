@@ -99,7 +99,7 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
                         {shown.status === "picked" || shown.status === "cancelled" ? (
                           <span className={l.qtyPicked !== null && l.qtyPicked < l.qtyToPick ? "font-medium text-amber-700" : ""}>{l.qtyPicked ?? "—"}</span>
                         ) : (
-                          <input className="input w-24 no-print" type="number" min={0} max={l.qtyToPick} name={`picked_${l.id}`} defaultValue={l.qtyPicked ?? ""} placeholder={String(l.qtyToPick)} />
+                          <input className="input w-24 no-print" type="number" min={0} max={l.qtyToPick} name={`picked_${l.id}`} defaultValue={l.qtyPicked ?? l.qtyToPick} />
                         )}
                         {alt.length > 0 && mode === "suggest" && shown.status !== "picked" && shown.status !== "cancelled" && (
                           <details className="mt-1 no-print">
@@ -124,7 +124,7 @@ export default async function PicklistsPage({ searchParams }: { searchParams: Pr
             {shown.status !== "picked" && shown.status !== "cancelled" && (
               <div className="mt-3 flex items-center gap-3 no-print">
                 <button className="btn-primary" type="submit">Record picks</button>
-                <span className="text-xs text-slate-500">Leave a line blank to save progress. A short pick keeps the shortfall as backorder and adjusts the order before invoicing.</span>
+                <span className="text-xs text-slate-500">Each line starts at the quantity to pick — lower it if the shelf was short, or clear it to leave that line for later. A short pick keeps the shortfall as backorder and adjusts the order before invoicing.</span>
               </div>
             )}
           </form>

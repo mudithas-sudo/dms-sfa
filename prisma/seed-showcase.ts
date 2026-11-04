@@ -1,6 +1,7 @@
 import { PrismaClient } from "@prisma/client";
 import { priceOrder } from "@/lib/pricing";
 import { allocateOrder, dispatchAllocations, nextInvoiceNumber, outletPosition, vatOf, dueDateFor } from "@/lib/orders";
+import { addToLot } from "@/lib/stock";
 
 // Top-up for a live demonstration. Run it the day before (or the morning of) a presentation:
 //   npx tsx prisma/seed-showcase.ts
@@ -9,6 +10,7 @@ import { allocateOrder, dispatchAllocations, nextInvoiceNumber, outletPosition, 
 //      the delivery-run map on the Deliveries screen have something to show
 //   2. today's field activity for every representative, anchored to UTC midnight like the app's own "today"
 //   3. this month's targets, copied from the latest month that has them
+//   4. stock at every branch warehouse, and visits left open on an earlier day closed
 // The orders are built with the same library functions the screens use, so stock, receivables and documents agree.
 
 const DAY = 86400000;
@@ -31,6 +33,23 @@ async function main() {
   const roleOf = (role: string, branchId: string) => users.find((u) => u.role === role && u.branchId === branchId);
   const vat = Number((await prisma.referenceItem.findFirst({ where: { kind: "tax_rate", isDefault: true } }))?.value ?? 12) / 100;
   let orderSeq = Number(((await prisma.salesOrder.findFirst({ orderBy: { orderNumber: "desc" }, select: { orderNumber: true } }))?.orderNumber ?? "SO-000000").replace("SO-", ""));
+
+  // ---------------------------------------------------------------- 0. Stock to sell
+  // test orders use up warehouse stock; keep at least 150 sellable units of every product at every branch warehouse,
+  // so an ordinary order is confirmed straight away (a shortage still shows when an order is larger than that)
+  const saleable = await prisma.warehouse.findMany({ where: { type: "saleable" } });
+  const lotTag = new Date().toISOString().slice(2, 10).replace(/-/g, "");
+  let restocked = 0;
+  for (const wh of saleable) {
+    const rows = await prisma.stockBalance.findMany({ where: { warehouseId: wh.id, locationType: "warehouse" } });
+    for (const p of products) {
+      const free = rows.filter((r) => r.productId === p.id && (!r.expiryDate || r.expiryDate > new Date())).reduce((s, r) => s + Math.max(0, r.qtyGood - r.qtyReserved), 0);
+      if (free >= 150) continue;
+      await addToLot({ locationType: "warehouse", warehouseId: wh.id }, p.id, `LOT-D${lotTag}-${p.sku}`, daysFromNow(180), "good", 300 - free, { type: "adjustment", note: "Demo restock so test orders can be filled", userName: "Demo data" });
+      restocked++;
+    }
+  }
+  if (restocked) console.log(`Restocked ${restocked} product(s) across ${saleable.length} warehouse(s)`);
 
   // ---------------------------------------------------------------- 1. Deliveries on the way
   for (let bi = 0; bi < branches.length; bi++) {
