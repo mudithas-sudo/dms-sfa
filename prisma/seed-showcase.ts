@@ -10,7 +10,7 @@ import { addToLot } from "@/lib/stock";
 //      the delivery-run map on the Deliveries screen have something to show
 //   2. today's field activity for every representative, anchored to UTC midnight like the app's own "today"
 //   3. this month's targets, copied from the latest month that has them
-//   4. stock at every branch warehouse, and visits left open on an earlier day closed
+//   4. stock at every branch warehouse; visits left open and van days left unacknowledged on earlier days are settled
 // The orders are built with the same library functions the screens use, so stock, receivables and documents agree.
 
 const DAY = 86400000;
@@ -124,6 +124,16 @@ async function main() {
     data: { status: "completed", checkoutAt: todayStart, outcome: "no_order", noOrderReason: "Closed automatically — left open on an earlier day" },
   });
   if (stale.count) console.log(`Closed ${stale.count} visit(s) left open on an earlier day`);
+  // a van whose earlier day was never acknowledged cannot be loaded again (a real control): settle the sample ones
+  const acked = await prisma.vanReconciliation.updateMany({
+    where: { dayDate: { lt: todayStart }, status: "pending_ack" },
+    data: { status: "closed", approvedBy: "Demo data", closedAt: todayStart, cause: "Variance within tolerance — acknowledged" },
+  });
+  const carried = await prisma.vanReconciliation.updateMany({
+    where: { dayDate: { lt: todayStart }, status: { in: ["variance_open", "escalated"] } },
+    data: { status: "carried_over", approvedBy: "Demo data", cause: "Carried over so the van can be loaded for testing" },
+  });
+  if (acked.count + carried.count) console.log(`Settled ${acked.count + carried.count} earlier-day van reconciliation(s)`);
   if ((await prisma.attendance.count({ where: { dayDate: todayStart } })) === 0) {
     const reps = users.filter((u) => u.role === "sales_rep");
     const outcomes = ["order_taken", "collection_only", "order_taken", "no_order"];

@@ -109,8 +109,10 @@ export default function FieldOrderForm({
   // offers are shown only when they apply to the selected customer's channel
   const channelId = outlets.find((o) => o.id === outletId)?.channelId ?? null;
   const labelOf = (productId: string) => promoLabels[productId]?.find((l) => !l.channelId || l.channelId === channelId)?.text;
+  // a van sale can only sell what is on the van, so other products are not offered
+  const onVan = (id: string) => ctx?.sellable[id] ?? 0;
   const shown = products.filter(
-    (p) => (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) && (!brand || p.brand === brand) && (!category || p.category === category) && (!promoOnly || labelOf(p.id)),
+    (p) => (orderType !== "van_sale" || onVan(p.id) > 0) && (!search || p.name.toLowerCase().includes(search.toLowerCase()) || p.sku.toLowerCase().includes(search.toLowerCase())) && (!brand || p.brand === brand) && (!category || p.category === category) && (!promoOnly || labelOf(p.id)),
   );
   const setBase = (id: string, n: number) => setQty((s) => ({ ...s, [id]: Math.max(0, Math.floor(n || 0)) }));
   // the +/− buttons add to the latest value, so two quick taps in a row both count
@@ -239,13 +241,13 @@ export default function FieldOrderForm({
                   <div className="flex items-center gap-1">
                     <button type="button" aria-label={`Remove one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-slate-300 bg-white text-lg font-medium text-slate-700 active:bg-slate-100 disabled:opacity-30" disabled={base === 0} onClick={() => bump(p.id, -factor)}>−</button>
                     <input className="input h-11 w-16 text-center" type="number" inputMode="numeric" min={0} aria-label={`Quantity of ${p.name}`} value={base ? Math.round(base / factor) : ""} placeholder="0" onChange={(e) => setBase(p.id, Number(e.target.value) * factor)} />
-                    <button type="button" aria-label={`Add one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 text-lg font-medium text-white active:bg-blue-700" onClick={() => bump(p.id, factor)}>+</button>
+                    <button type="button" aria-label={`Add one ${p.name}`} className="flex h-11 w-11 items-center justify-center rounded-lg border border-blue-600 bg-blue-600 text-lg font-medium text-white active:bg-blue-700 disabled:opacity-30" onClick={() => bump(p.id, factor)} disabled={orderType === "van_sale" && base + factor > onVan(p.id)}>+</button>
                   </div>
                 </div>
               </li>
             );
           })}
-          {visible.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-400">No products match.</li>}
+          {visible.length === 0 && <li className="px-3 py-6 text-center text-sm text-slate-400">{orderType === "van_sale" && !search && !brand && !category && !promoOnly ? "Nothing is on the van yet — request stock on the Van screen." : "No products match."}</li>}
         </ul>
         {!filtering && shown.length > visibleCount && (
           <button type="button" className="btn-secondary w-full" onClick={() => setVisibleCount((n) => n + 10)}>Show {Math.min(10, shown.length - visibleCount)} more ({shown.length - visibleCount} remaining)</button>
