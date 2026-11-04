@@ -40,6 +40,25 @@ export default function PhotoCapture({
     setBusy(false);
   }
 
+  // For trying the prototype on a computer without a camera: a generated, clearly labelled sample picture.
+  function addSample() {
+    const canvas = document.createElement("canvas");
+    canvas.width = 480;
+    canvas.height = 320;
+    const ctx = canvas.getContext("2d");
+    if (!ctx) return;
+    ctx.fillStyle = "#efefef";
+    ctx.fillRect(0, 0, 480, 320);
+    ctx.fillStyle = "#e4420b";
+    ctx.fillRect(0, 0, 480, 8);
+    ctx.fillStyle = "#3a3a3a";
+    ctx.font = "bold 22px sans-serif";
+    ctx.fillText("Sample photo (demo)", 24, 150);
+    ctx.font = "16px sans-serif";
+    ctx.fillText(new Date().toLocaleString(), 24, 182);
+    setPhotos((p) => [...p, { data: canvas.toDataURL("image/jpeg", 0.6), status: "pending" as const }].slice(0, max));
+  }
+
   const good = photos.filter((p) => p.data);
   return (
     <div>
@@ -56,6 +75,11 @@ export default function PhotoCapture({
             <button type="button" onClick={() => setPhotos((x) => x.filter((_, j) => j !== photos.indexOf(p)))} className="absolute -right-1 -top-1 rounded-full bg-rose-600 px-1 text-[9px] text-white">×</button>
           </span>
         ))}
+        {good.length < max && (
+          <button type="button" className="text-xs font-medium text-slate-500 underline" onClick={addSample}>
+            Demo: use a sample photo
+          </button>
+        )}
         {photos.some((p) => p.status === "failed") && <span className="text-xs text-rose-600">Capture failed — try again</span>}
       </div>
       <p className="mt-1 text-[10px] text-slate-400">Camera only — gallery images are not accepted as evidence. Up to {max} photos; they upload after the data so they never delay a sale.</p>

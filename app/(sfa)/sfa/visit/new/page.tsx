@@ -3,6 +3,7 @@ import { prisma } from "@/lib/prisma";
 import { getSession } from "@/lib/session";
 import Banner from "@/components/Banner";
 import GeoFields from "@/components/GeoFields";
+import NavSelect from "@/components/NavSelect";
 import PhotoCapture from "@/components/PhotoCapture";
 import { checkInVisit, checkOutVisit } from "@/app/actions/sfa-field-actions";
 import { formatDateTime } from "@/lib/format";
@@ -107,11 +108,7 @@ export default async function VisitPage({ searchParams }: { searchParams: Promis
       <form action={checkInVisit} className="card space-y-3 p-4" key={chosen?.id}>
         <div>
           <label className="label" htmlFor="outletId">Customer</label>
-          <select className="input" id="outletId" name="outletId" defaultValue={chosen?.id}>
-            {outlets.map((o) => (
-              <option key={o.id} value={o.id}>{o.name}</option>
-            ))}
-          </select>
+          <NavSelect id="outletId" name="outletId" value={chosen?.id} options={outlets.map((o) => ({ value: o.id, label: o.name }))} hrefFor="/sfa/visit/new?outlet={value}" />
         </div>
         {chosen && <GeoFields lat={chosen.lat} lng={chosen.lng} />}
         {far && (

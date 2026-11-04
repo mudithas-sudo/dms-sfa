@@ -16,7 +16,7 @@ export default async function DeliveriesPage({ searchParams }: { searchParams: P
   const [pending, recent, balances, products] = await Promise.all([
     branchId
       ? prisma.invoice.findMany({
-          where: { branchId, deliveryStatus: { in: ["pending_delivery", "out_for_delivery", "redelivery_scheduled"] }, status: { not: "voided" }, salesOrder: { source: "backend" } },
+          where: { branchId, deliveryStatus: { in: ["pending_delivery", "out_for_delivery", "redelivery_scheduled"] }, status: { not: "voided" } },
           include: { outlet: true, lines: true, salesOrder: true },
           orderBy: { invoiceDate: "asc" },
         })

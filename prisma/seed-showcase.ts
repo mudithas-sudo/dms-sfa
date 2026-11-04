@@ -5,8 +5,8 @@ import { allocateOrder, dispatchAllocations, nextInvoiceNumber, outletPosition, 
 // Top-up for a live demonstration. Run it the day before (or the morning of) a presentation:
 //   npx tsx prisma/seed-showcase.ts
 // It adds only what goes stale or is missing, and is safe to run again:
-//   1. deliveries waiting to be dispatched and on the road at every branch (backend orders, which is what the
-//      Deliveries screen lists), so the tracking cards and the delivery-run map have something to show
+//   1. deliveries waiting to be dispatched and on the road at every branch, so the tracking cards and
+//      the delivery-run map on the Deliveries screen have something to show
 //   2. today's field activity for every representative, anchored to UTC midnight like the app's own "today"
 //   3. this month's targets, copied from the latest month that has them
 // The orders are built with the same library functions the screens use, so stock, receivables and documents agree.
@@ -35,7 +35,7 @@ async function main() {
   // ---------------------------------------------------------------- 1. Deliveries on the way
   for (let bi = 0; bi < branches.length; bi++) {
     const b = branches[bi];
-    const open = await prisma.invoice.count({ where: { branchId: b.id, status: { not: "voided" }, deliveryStatus: { in: ["pending_delivery", "out_for_delivery"] }, salesOrder: { source: "backend" } } });
+    const open = await prisma.invoice.count({ where: { branchId: b.id, status: { not: "voided" }, deliveryStatus: { in: ["pending_delivery", "out_for_delivery"] } } });
     if (open >= 4) continue;
     const ops = roleOf("branch_ops", b.id)?.name ?? "Branch Ops";
     const outlets = await prisma.outlet.findMany({ where: { branchId: b.id, status: "active", onboardingStatus: "approved", creditStatus: "active" }, orderBy: { code: "asc" } });
@@ -99,6 +99,12 @@ async function main() {
   // ---------------------------------------------------------------- 2. Today in the field
   const now0 = new Date();
   const todayStart = new Date(Date.UTC(now0.getUTCFullYear(), now0.getUTCMonth(), now0.getUTCDate()));
+  // a visit left open on an earlier day blocks the rep's next check-in and End Day: close it
+  const stale = await prisma.fieldVisit.updateMany({
+    where: { status: "in_progress", checkinAt: { lt: todayStart } },
+    data: { status: "completed", checkoutAt: todayStart, outcome: "no_order", noOrderReason: "Closed automatically — left open on an earlier day" },
+  });
+  if (stale.count) console.log(`Closed ${stale.count} visit(s) left open on an earlier day`);
   if ((await prisma.attendance.count({ where: { dayDate: todayStart } })) === 0) {
     const reps = users.filter((u) => u.role === "sales_rep");
     const outcomes = ["order_taken", "collection_only", "order_taken", "no_order"];

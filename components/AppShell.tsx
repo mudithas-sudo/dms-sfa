@@ -78,6 +78,7 @@ export default async function AppShell({
                 <div className="absolute right-0 top-12 z-40 w-[min(92vw,640px)] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
                   <p className="mb-2 text-xs font-semibold text-slate-500">Demo: switch role, branch or user</p>
                   <RoleSwitcher currentRole={role} currentBranchId={branchId} currentUserId={userId} branches={branches} users={users} />
+                  <Link href="/start" className="mt-3 inline-flex text-xs font-semibold text-blue-700 hover:underline">Start here — people and end-to-end scenarios</Link>
                 </div>
               </details>
             </div>

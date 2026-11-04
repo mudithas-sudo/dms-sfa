@@ -51,6 +51,7 @@ export default async function MobileShell({
             <summary className="flex min-h-[36px] cursor-pointer items-center text-slate-400">Demo: switch role or user</summary>
             <div className="pb-1">
               <RoleSwitcher currentRole={role} currentBranchId={branchId} currentUserId={userId} branches={branches} users={users} />
+              <Link href="/start" className="mt-2 inline-flex min-h-[36px] items-center text-xs font-semibold text-blue-700">Start here — people and scenarios</Link>
             </div>
           </details>
         </header>
