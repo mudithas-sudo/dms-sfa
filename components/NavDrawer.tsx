@@ -7,12 +7,14 @@ import Sidebar, { type NavItem } from "@/components/Sidebar";
 
 // Below laptop width the sidebar folds into this slide-out menu, opened from the top bar.
 export default function NavDrawer({ navItems, roleLabel }: { navItems: NavItem[]; roleLabel: string }) {
-  const [open, setOpen] = useState(false);
   const pathname = usePathname();
-  useEffect(() => setOpen(false), [pathname]);
+  // the menu is open only for the page it was opened on, so following a link closes it
+  const [openOn, setOpenOn] = useState<string | null>(null);
+  const open = openOn === pathname;
+  const setOpen = (v: boolean) => setOpenOn(v ? pathname : null);
   useEffect(() => {
     if (!open) return;
-    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpen(false);
+    const onKey = (e: KeyboardEvent) => e.key === "Escape" && setOpenOn(null);
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [open]);
