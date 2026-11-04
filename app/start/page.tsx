@@ -5,6 +5,7 @@ import { switchPersona } from "@/app/actions/session-actions";
 import { ROLES, type RoleId } from "@/lib/constants";
 
 export const metadata = { title: "Start here — Company F and B DMS & SFA" };
+export const dynamic = "force-dynamic"; // people are read live, so a reseed never leaves stale ids behind
 
 // The front door for people trying the prototype: pick a person in one click, then follow an end-to-end scenario.
 // Each step button signs in as the right person and opens the right screen.
