@@ -1,6 +1,6 @@
 # Client demonstration guide — Company F and B DMS & SFA
 
-Live prototype: https://dms-sfa-6uoh.vercel.app/start — the **Start here** page: pick a person in one click, or follow one of six end-to-end scenarios (order to cash, van sale, new customer, market return, restock the van, close the day). Share this link with the customer for their own testing.
+Live prototype: https://dms-sfa-6uoh.vercel.app — opens on the **sign-in page**. Each demo account is a card: "Use this account" fills the form, and every account's password is `demo1234`. From there, **Follow the end-to-end test scenarios** opens the Start page (https://dms-sfa-6uoh.vercel.app/start) with six guided scenarios. Share the first link with the customer for their own testing; **Sign out** is in the menu under the name at the top right.
 Allow about 40 minutes: 30 of demonstration, 10 for questions. Every step below uses data that is already loaded.
 
 ## Before the meeting
