@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Bell, Building2, Warehouse, ShieldCheck, BarChart3, LayoutDashboard, ChevronDown } from "lucide-react";
 import SearchBox from "@/components/SearchBox";
 import NavDrawer from "@/components/NavDrawer";
+import { signOut } from "@/app/actions/auth-actions";
 import { switcherLists } from "@/lib/switcher-lists";
 import Forbidden from "@/components/Forbidden";
 import MfaGate from "@/components/MfaGate";
@@ -82,7 +83,10 @@ export default async function AppShell({
                 <div className="absolute right-0 top-12 z-40 w-[min(92vw,640px)] rounded-2xl border border-slate-200 bg-white p-4 shadow-lg">
                   <p className="mb-2 text-xs font-semibold text-slate-500">Demo: switch role, branch or user</p>
                   <RoleSwitcher currentRole={role} currentBranchId={branchId} currentUserId={userId} branches={branches} users={users} />
-                  <Link href="/start" className="mt-3 inline-flex text-xs font-semibold text-blue-700 hover:underline">Start here — people and end-to-end scenarios</Link>
+                  <div className="mt-3 flex flex-wrap items-center justify-between gap-2 border-t border-slate-100 pt-3">
+                    <Link href="/start" className="text-xs font-semibold text-blue-700 hover:underline">Start here — people and end-to-end scenarios</Link>
+                    <form action={signOut}><button type="submit" className="btn-secondary px-3 py-1.5 text-xs">Sign out</button></form>
+                  </div>
                 </div>
               </details>
             </div>

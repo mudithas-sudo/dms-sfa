@@ -178,7 +178,7 @@ export default async function StartPage() {
             </section>
           ))}
         </div>
-        <p className="mt-8 text-xs text-slate-400">Prototype build with sample data — not for production use. <Link className="underline" href="/admin">Skip to head office</Link></p>
+        <p className="mt-8 text-xs text-slate-400">Prototype build with sample data — not for production use. <Link className="underline" href="/login">Sign in with a demo account</Link></p>
       </div>
     </div>
   );

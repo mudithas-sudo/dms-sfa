@@ -4,6 +4,7 @@ import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollToTop from "@/components/ScrollToTop";
 import { prisma } from "@/lib/prisma";
 import { switcherLists } from "@/lib/switcher-lists";
+import { signOut } from "@/app/actions/auth-actions";
 import Forbidden from "@/components/Forbidden";
 import { groupAllowed } from "@/lib/rbac";
 import type { RoleId } from "@/lib/constants";
@@ -51,7 +52,10 @@ export default async function MobileShell({
             <summary className="flex min-h-[36px] cursor-pointer items-center text-slate-400">Demo: switch role or user</summary>
             <div className="pb-1">
               <RoleSwitcher currentRole={role} currentBranchId={branchId} currentUserId={userId} branches={branches} users={users} />
-              <Link href="/start" className="mt-2 inline-flex min-h-[36px] items-center text-xs font-semibold text-blue-700">Start here — people and scenarios</Link>
+              <div className="mt-2 flex items-center justify-between gap-2">
+                <Link href="/start" className="inline-flex min-h-[36px] items-center text-xs font-semibold text-blue-700">Start here — people and scenarios</Link>
+                <form action={signOut}><button type="submit" className="btn-secondary min-h-[36px] px-3 py-1 text-xs">Sign out</button></form>
+              </div>
             </div>
           </details>
         </header>
