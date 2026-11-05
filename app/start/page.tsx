@@ -123,7 +123,7 @@ export default async function StartPage() {
         <h1 className="mt-6 text-xl font-semibold text-slate-900 sm:mt-8 sm:text-2xl">Start here</h1>
         <p className="mt-2 max-w-3xl text-sm text-slate-500">
           Everyone uses the same sample data{branch ? ` for ${branch.name}` : ""}. Choose a person to look around, or follow a scenario below: each step opens the right screen as the right person.
-          You can switch person at any time from the menu at the top right (in the phone app: “Demo: switch role or user”), and come back here from that menu.
+          To become someone else, sign out (menu under the name at the top right; in the phone app, the sign-out button beside the bell) and pick another person here or on the sign-in page.
         </p>
 
         <h2 className="mt-8 text-base font-semibold text-slate-900">Who do you want to be?</h2>

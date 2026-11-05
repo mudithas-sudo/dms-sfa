@@ -12,7 +12,7 @@ Allow about 40 minutes: 30 of demonstration, 10 for questions. Every step below 
 | Set up two windows | Window 1: normal width for the desktop screens. Window 2: narrow (or the browser's phone view) at `/sfa` for the field app. |
 | After a rehearsal, or after the customer has been testing | Rerun the command above. Testing uses up stock and waiting deliveries, and the command puts them back. |
 
-Switching person: from the Start page, or from the menu under the name at the top right (role, branch, user). In the field app it is under "Demo: switch role or user". Both menus link back to the Start page.
+Switching person: **Sign out** (menu under the name at the top right; in the field app, the sign-out button beside the bell), then sign in as the next person — from the sign-in page or the Start page.
 
 | Role | Branch | User |
 |---|---|---|

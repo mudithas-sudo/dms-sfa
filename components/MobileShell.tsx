@@ -1,9 +1,7 @@
 import Link from "next/link";
-import RoleSwitcher from "@/components/RoleSwitcher";
 import MobileBottomNav from "@/components/MobileBottomNav";
 import ScrollToTop from "@/components/ScrollToTop";
 import { prisma } from "@/lib/prisma";
-import { switcherLists } from "@/lib/switcher-lists";
 import { signOut } from "@/app/actions/auth-actions";
 import Forbidden from "@/components/Forbidden";
 import { groupAllowed } from "@/lib/rbac";
@@ -13,7 +11,6 @@ import type { RoleId } from "@/lib/constants";
 // Layout: a slim header, one scrolling content area, a floating bottom navigation pill — and nothing else fixed on top of the content.
 export default async function MobileShell({
   role,
-  branchId,
   userId,
   title,
   children,
@@ -24,10 +21,7 @@ export default async function MobileShell({
   title: string;
   children: React.ReactNode;
 }) {
-  const [{ branches, users }, currentUser] = await Promise.all([
-    switcherLists(),
-    userId ? prisma.user.findUnique({ where: { id: userId }, include: { branch: true } }) : null,
-  ]);
+  const currentUser = userId ? await prisma.user.findUnique({ where: { id: userId }, include: { branch: true } }) : null;
   const initials = (currentUser?.name ?? "Sales Rep").split(" ").map((w) => w[0]).slice(0, 2).join("").toUpperCase();
 
   return (
@@ -44,20 +38,17 @@ export default async function MobileShell({
                 </p>
               </div>
             </div>
+            <div className="flex shrink-0 items-center gap-2">
             <Link href="/notifications" aria-label="Notifications" className="btn-round h-10 w-10">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9" /><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0" /></svg>
             </Link>
-          </div>
-          <details className="mt-1 text-xs">
-            <summary className="flex min-h-[36px] cursor-pointer items-center text-slate-400">Demo: switch role or user</summary>
-            <div className="pb-1">
-              <RoleSwitcher currentRole={role} currentBranchId={branchId} currentUserId={userId} branches={branches} users={users} />
-              <div className="mt-2 flex items-center justify-between gap-2">
-                <Link href="/start" className="inline-flex min-h-[36px] items-center text-xs font-semibold text-blue-700">Start here — people and scenarios</Link>
-                <form action={signOut}><button type="submit" className="btn-secondary min-h-[36px] px-3 py-1 text-xs">Sign out</button></form>
-              </div>
+            <form action={signOut}>
+              <button type="submit" aria-label="Sign out" title="Sign out" className="btn-round h-10 w-10">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="m16 17 5-5-5-5" /><path d="M21 12H9" /></svg>
+              </button>
+            </form>
             </div>
-          </details>
+          </div>
         </header>
         <main id="app-scroll" className="flex-1 overflow-y-auto overscroll-contain bg-slate-50 px-4 pb-6 pt-3">
           <ScrollToTop />
