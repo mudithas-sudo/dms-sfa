@@ -194,10 +194,10 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
               const last = lastCycle.get(c.category);
               const dueIn = freq && last ? freq - Math.floor((now.getTime() - last.getTime()) / 86400000) : null;
               return (
-                <div key={c.category} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="w-40 text-slate-700">{c.category}</span>
+                <div key={c.category} className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm">
+                  <span className="min-w-0 flex-1 text-slate-700 sm:w-40 sm:flex-none">{c.category}</span>
                   <input className="input w-24 py-1" type="number" min={0} name={`freq_${c.category}`} defaultValue={freq || ""} placeholder="days" />
-                  <span className={`w-40 text-xs ${freq && (dueIn === null || dueIn <= 0) ? "font-medium text-rose-600" : "text-slate-400"}`}>
+                  <span className={`basis-full text-xs sm:basis-auto sm:w-40 ${freq && (dueIn === null || dueIn <= 0) ? "font-medium text-rose-600" : "text-slate-400"}`}>
                     {!freq ? "no schedule" : last ? (dueIn! <= 0 ? `due now (last ${formatDate(last)})` : `due in ${dueIn}d`) : "never counted — due"}
                   </span>
                 </div>
@@ -212,7 +212,7 @@ export default async function StockCountPage({ searchParams }: { searchParams: P
             {counts.map((c) => {
               const units = c.lines.reduce((s, l) => s + Math.abs((l.recountQty ?? l.countedQty) - l.systemQty), 0);
               return (
-                <li key={c.id} className="flex items-center justify-between gap-2">
+                <li key={c.id} className="flex flex-wrap items-center justify-between gap-2">
                   <span className="text-slate-700">
                     {formatDate(c.countedAt)} · {c.warehouse.name} · {c.type} · {c.scope}
                   </span>
